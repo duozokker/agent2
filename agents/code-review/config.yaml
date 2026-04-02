@@ -1,0 +1,7 @@
+name: code-review
+description: "Analyzes code for bugs, security, performance, and style — returns structured review"
+model: ""
+port: 8008
+timeout_seconds: 120
+max_retries: 3
+collections: []

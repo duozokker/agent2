@@ -1,0 +1,10 @@
+name: my-agent
+description: "Describe the business job of your agent"
+model: openrouter/anthropic/claude-sonnet-4
+port: 8000
+timeout_seconds: 120
+max_retries: 3
+collections: []
+provider_order: []
+provider_policy: {}
+capabilities: []

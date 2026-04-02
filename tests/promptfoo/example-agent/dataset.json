@@ -1,0 +1,12 @@
+[
+  {
+    "text": "Machine learning is a subset of artificial intelligence that enables systems to learn from data. Key techniques include supervised learning, unsupervised learning, and reinforcement learning. Recent advances in deep learning have revolutionized natural language processing and computer vision.",
+    "expected_language": "en",
+    "expected_min_key_points": 2
+  },
+  {
+    "text": "Climate change refers to long-term shifts in global temperatures and weather patterns. Human activities, particularly the burning of fossil fuels, have been the main driver since the 1800s. The Paris Agreement aims to limit global warming to 1.5 degrees Celsius above pre-industrial levels.",
+    "expected_language": "en",
+    "expected_min_key_points": 2
+  }
+]

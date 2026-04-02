@@ -1,0 +1,82 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]: Agent²
+      - link "GitHub →" [ref=e6] [cursor=pointer]:
+        - /url: https://github.com/duozokker/agent2
+    - generic [ref=e7]:
+      - paragraph [ref=e10]: PRODUCTION RUNTIME FOR AI AGENTS
+      - heading "Schema in." [level=1] [ref=e11]:
+        - text: Schema
+        - text: in.
+      - generic [ref=e12]:
+        - heading "API out." [level=2] [ref=e13]:
+          - text: API
+          - text: out.
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: Define a Pydantic schema and a prompt. Get a production HTTP backend with auth, typed outputs, pause/resume, and human approval.
+          - link "Get started" [ref=e16] [cursor=pointer]:
+            - /url: https://github.com/duozokker/agent2
+            - text: Get started
+            - img [ref=e17]
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]: "01"
+        - heading "Typed Outputs" [level=3] [ref=e22]
+        - paragraph [ref=e23]: Pydantic enforces your schema. Invalid output? Auto-retry. No freeform text.
+      - generic [ref=e24]:
+        - generic [ref=e25]: "02"
+        - heading "Pause / Resume" [level=3] [ref=e26]
+        - paragraph [ref=e27]: Agent asks human a question. Waits days. Picks up with full context. Serialized message history.
+      - generic [ref=e28]:
+        - generic [ref=e29]: "03"
+        - heading "Human Approval" [level=3] [ref=e30]
+        - paragraph [ref=e31]: Side effects need sign-off. pending_actions → host approves → execute. Generic, not product-specific.
+      - generic [ref=e32]:
+        - generic [ref=e33]: "04"
+        - heading "Knowledge Search" [level=3] [ref=e34]
+        - paragraph [ref=e35]: R2R + FastMCP. Documents → embeddings → search. Per-tenant collection scoping at runtime.
+      - generic [ref=e36]:
+        - generic [ref=e37]: "05"
+        - heading "Provider Routing" [level=3] [ref=e38]
+        - paragraph [ref=e39]: Pin to Anthropic for prompt cache. Fall back to others. 10x cost savings on repeated calls.
+      - generic [ref=e40]:
+        - generic [ref=e41]: "06"
+        - heading "AI Tool Skills" [level=3] [ref=e42]
+        - paragraph [ref=e43]: Open this repo in Claude Code, Codex, or Cursor. Built-in skills teach your AI tool the framework.
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - paragraph [ref=e47]: PRODUCTION-TESTED AT SCALE
+        - paragraph [ref=e48]: Born from real enterprise work.
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - paragraph [ref=e51]: 4M+
+          - paragraph [ref=e52]: documents
+        - generic [ref=e53]:
+          - paragraph [ref=e54]: $200k+
+          - paragraph [ref=e55]: revenue
+    - generic [ref=e57]:
+      - paragraph [ref=e58]: YOUR AGENT — 30 LINES
+      - generic [ref=e59]:
+        - paragraph [ref=e60]: "# schemas.py"
+        - paragraph [ref=e61]: "class ContractReview(BaseModel):"
+        - paragraph [ref=e62]: "risk_level: Literal[\"low\", \"medium\", \"high\"]"
+        - paragraph [ref=e63]: "findings: list[Finding]"
+        - paragraph [ref=e64]: "confidence: float"
+        - paragraph [ref=e65]: "# agent.py"
+        - paragraph [ref=e66]: agent = create_agent(name="lawyer", output_type=ContractReview)
+        - paragraph [ref=e67]: "# main.py"
+        - paragraph [ref=e68]: app = create_app("lawyer")
+        - paragraph [ref=e69]: "# → Full production API. Done."
+    - generic [ref=e70]:
+      - heading "Build agents. Not infrastructure." [level=2] [ref=e71]:
+        - text: Build agents.
+        - text: Not infrastructure.
+      - link "View on GitHub" [ref=e72] [cursor=pointer]:
+        - /url: https://github.com/duozokker/agent2
+        - text: View on GitHub
+        - img [ref=e73]
+      - paragraph [ref=e75]: Open source · MIT licensed · by Artesiana
+  - button "Open Next.js Dev Tools" [ref=e81] [cursor=pointer]:
+    - img [ref=e82]
+  - alert [ref=e85]

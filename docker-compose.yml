@@ -1,0 +1,569 @@
+services:
+  # =============================================================================
+  # DATABASES
+  # =============================================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agent_secret_change_me}
+      POSTGRES_DB: r2r  # Default DB used by R2R
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agent}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: >
+      --requirepass ${REDIS_AUTH:-myredissecret}
+      --maxmemory-policy noeviction
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_AUTH:-myredissecret}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # =============================================================================
+  # RAG PLATFORM (R2R)
+  # =============================================================================
+  r2r:
+    image: ragtoriches/prod:latest
+    profiles:
+      - full
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - R2R_PORT=7272
+      - R2R_HOST=0.0.0.0
+      - R2R_PROJECT_NAME=agent2
+      - R2R_POSTGRES_HOST=postgres
+      - R2R_POSTGRES_PORT=5432
+      - R2R_POSTGRES_USER=${POSTGRES_USER:-agent}
+      - R2R_POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agent_secret_change_me}
+      - R2R_POSTGRES_DBNAME=r2r
+      - R2R_SECRET_KEY=${POSTGRES_PASSWORD:-agent_secret_change_me}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-placeholder}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+      - R2R_CONFIG_PATH=/app/user_configs/r2r.toml
+      - LITELLM_DROP_PARAMS=true
+    volumes:
+      - ./docker/r2r/r2r.toml:/app/user_configs/r2r.toml:ro
+    ports:
+      - "7272:7272"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  # =============================================================================
+  # PDF PROCESSING (Docling)
+  # =============================================================================
+  docling:
+    image: quay.io/docling-project/docling-serve-cpu:latest
+    profiles:
+      - full
+    ports:
+      - "5001:5001"
+    environment:
+      - OMP_NUM_THREADS=4
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # =============================================================================
+  # OBSERVABILITY (Langfuse v3)
+  # Requires: postgres, clickhouse, redis, minio (S3-compatible blob store)
+  # =============================================================================
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    depends_on: &langfuse-depends-on
+      postgres:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3030:3030"
+    environment: &langfuse-worker-env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:-agent_secret_change_me}@postgres:5432/langfuse
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      SALT: ${LANGFUSE_SALT:-changeme-salt-at-least-32-characters-long}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      TELEMETRY_ENABLED: ${TELEMETRY_ENABLED:-true}
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: ${LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES:-false}
+      # ClickHouse
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      # S3 / MinIO – event upload
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-miniosecret}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      # S3 / MinIO – media upload
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-miniosecret}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:${LANGFUSE_MINIO_PORT:-9086}
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      # Batch export (disabled)
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: ${REDIS_AUTH:-myredissecret}
+      REDIS_TLS_ENABLED: "false"
+    restart: unless-stopped
+
+  langfuse-web:
+    image: langfuse/langfuse:3
+    depends_on: *langfuse-depends-on
+    ports:
+      - "${LANGFUSE_WEB_PORT:-3000}:3000"
+    environment:
+      <<: *langfuse-worker-env
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-changeme-nextauth-secret-at-least-32-chars}
+      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-}
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:-}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://$(hostname -i):3000/api/public/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse}
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+    restart: unless-stopped
+
+  langfuse-minio:
+    image: cgr.dev/chainguard/minio
+    entrypoint: sh
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-miniosecret}
+    ports:
+      - "${LANGFUSE_MINIO_PORT:-9086}:9000"
+      - "127.0.0.1:9087:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+    restart: unless-stopped
+
+  # =============================================================================
+  # WORKFLOW ENGINE (Temporal)
+  # =============================================================================
+  temporal:
+    image: temporalio/auto-setup:latest
+    profiles:
+      - full
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./docker/temporal/development-sql.yaml:/etc/temporal/config/dynamicconfig/development-sql.yaml:ro
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-agent}
+      - POSTGRES_PWD=${POSTGRES_PASSWORD:-agent_secret_change_me}
+      - POSTGRES_SEEDS=postgres
+      - DYNAMIC_CONFIG_FILE_PATH=/etc/temporal/config/dynamicconfig/development-sql.yaml
+    ports:
+      - "7233:7233"
+    healthcheck:
+      test: ["CMD-SHELL", "temporal operator cluster health --address $(hostname -i):7233"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    profiles:
+      - full
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+    ports:
+      - "8233:8080"
+    restart: unless-stopped
+
+  # =============================================================================
+  # KNOWLEDGE MCP SERVER
+  # =============================================================================
+  knowledge-mcp:
+    build:
+      context: .
+      dockerfile: shared/knowledge_mcp/Dockerfile
+    profiles:
+      - full
+    depends_on:
+      r2r:
+        condition: service_healthy
+    environment:
+      - R2R_BASE_URL=http://r2r:7272
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=9090
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:9090/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # =============================================================================
+  # EXAMPLE AGENT
+  # =============================================================================
+  example-agent:
+    build:
+      context: .
+      dockerfile: agents/example-agent/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=example-agent
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - R2R_BASE_URL=http://r2r:7272
+      - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - TEMPORAL_HOST=temporal:7233
+      - TEMPORAL_NAMESPACE=default
+      - TEMPORAL_TASK_QUEUE=agent-tasks
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # SUPPORT TICKET AGENT
+  # =============================================================================
+  support-ticket:
+    build:
+      context: .
+      dockerfile: agents/support-ticket/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=support-ticket
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8002:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # CODE REVIEW AGENT
+  # =============================================================================
+  code-review:
+    build:
+      context: .
+      dockerfile: agents/code-review/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=code-review
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8008:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # INVOICE EXTRACTION AGENT
+  # =============================================================================
+  invoice:
+    build:
+      context: .
+      dockerfile: agents/invoice/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=invoice
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8009:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # RAG TEST AGENT (demonstrates knowledge search pipeline)
+  # =============================================================================
+  rag-test:
+    build:
+      context: .
+      dockerfile: agents/rag-test/Dockerfile
+    profiles:
+      - full
+    depends_on:
+      redis:
+        condition: service_healthy
+      knowledge-mcp:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=rag-test
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - R2R_BASE_URL=http://r2r:7272
+      - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - TEMPORAL_HOST=temporal:7233
+      - TEMPORAL_NAMESPACE=default
+      - TEMPORAL_TASK_QUEUE=agent-tasks
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8003:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # APPROVAL DEMO (pending actions / human-in-the-loop)
+  # =============================================================================
+  approval-demo:
+    build:
+      context: .
+      dockerfile: agents/approval-demo/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=approval-demo
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8004:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # RESUME DEMO (message history / pause-resume)
+  # =============================================================================
+  resume-demo:
+    build:
+      context: .
+      dockerfile: agents/resume-demo/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=resume-demo
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8005:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # PROVIDER POLICY DEMO (OpenRouter provider affinity)
+  # =============================================================================
+  provider-policy-demo:
+    build:
+      context: .
+      dockerfile: agents/provider-policy-demo/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=provider-policy-demo
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8006:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # SCOPED TOOLS DEMO (tool interception + knowledge scoping)
+  # =============================================================================
+  scoped-tools-demo:
+    build:
+      context: .
+      dockerfile: agents/scoped-tools-demo/Dockerfile
+    profiles:
+      - full
+    depends_on:
+      redis:
+        condition: service_healthy
+      knowledge-mcp:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=scoped-tools-demo
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - R2R_BASE_URL=http://r2r:7272
+      - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8007:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  clickhouse-data:
+  clickhouse-logs:
+  minio-data:

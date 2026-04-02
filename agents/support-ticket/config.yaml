@@ -1,0 +1,7 @@
+name: support-ticket
+description: "Classifies support tickets, extracts action items, and drafts customer responses"
+model: ""
+port: 8002
+timeout_seconds: 120
+max_retries: 3
+collections: []

@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --extra dev
+      - name: Lint with ruff
+        run: uv run ruff check shared/ agents/ tests/
+      - name: Run tests
+        run: uv run pytest tests/ -v --tb=short
+
+  docker-verify:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Docker Compose config
+        run: docker compose config --quiet
+      - name: Build default stack agents
+        run: docker compose build example-agent support-ticket code-review invoice

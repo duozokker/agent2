@@ -1,0 +1,12 @@
+# Knowledge Base Collections
+# Maps R2R collections to agents that can access them.
+# Use `python -m shared.ingest --all` to ingest all collections.
+
+collections:
+  example-docs:
+    description: "Example documents for testing the framework"
+    books_dir: books/example/
+    agents:
+      - example-agent
+      - rag-test
+      - scoped-tools-demo

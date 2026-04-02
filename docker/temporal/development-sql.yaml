@@ -1,0 +1,6 @@
+# Minimal dynamic config for local Temporal development.
+#
+# Temporal's auto-setup image validates that the configured file exists on
+# startup. The framework does not currently need any dynamic overrides, so an
+# empty mapping is sufficient and keeps the full Docker profile bootable.
+{}

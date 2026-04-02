@@ -1,0 +1,7 @@
+name: example-agent
+description: "Summarizes documents with structured output — demonstrates the Agent2 framework"
+model: ""  # Uses DEFAULT_MODEL from env
+port: 8001
+timeout_seconds: 120
+max_retries: 3
+collections: []

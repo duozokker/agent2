@@ -1,0 +1,88 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - text: Agent
+        - superscript [ref=e6]: "2"
+      - generic [ref=e8]:
+        - link "Features" [ref=e9] [cursor=pointer]:
+          - /url: "#features"
+        - link "How it works" [ref=e10] [cursor=pointer]:
+          - /url: "#how"
+        - link "Showcase" [ref=e11] [cursor=pointer]:
+          - /url: "#showcase"
+        - link "GitHub →" [ref=e12] [cursor=pointer]:
+          - /url: https://github.com/duozokker/agent2
+    - generic [ref=e13]:
+      - paragraph [ref=e14]: The production runtime for AI agents
+      - heading "Schema in. API out." [level=1] [ref=e15]:
+        - text: Schema in.
+        - text: API out.
+      - paragraph [ref=e16]: You define a Pydantic schema, tools, and a prompt. Agent2 gives you a typed HTTP backend with auth, pause/resume, human approval, and knowledge search.
+      - generic [ref=e17]:
+        - link "View on GitHub" [ref=e18] [cursor=pointer]:
+          - /url: https://github.com/duozokker/agent2
+        - link "See how it works" [ref=e19] [cursor=pointer]:
+          - /url: "#how"
+    - generic [ref=e23]: "# Your entire agent — 3 files, ~30 lines from shared.runtime import create_agent from shared.api import create_app agent = create_agent( name=\"lawyer\", output_type=ContractReview, instructions=\"You are a senior contract lawyer...\", ) app = create_app(\"lawyer\") # → Full HTTP API with auth, typed output, async queue"
+    - generic [ref=e24]:
+      - heading "What the framework handles" [level=2] [ref=e27]
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - heading "Typed Outputs" [level=3] [ref=e30]
+          - paragraph [ref=e31]: Pydantic model as output_type. Auto-retry on validation failure. No freeform text — real structured data.
+        - generic [ref=e32]:
+          - heading "Pause / Resume" [level=3] [ref=e33]
+          - paragraph [ref=e34]: Serialized message history. Agent asks a question, waits days, picks up exactly where it left off.
+        - generic [ref=e35]:
+          - heading "Human Approval" [level=3] [ref=e36]
+          - paragraph [ref=e37]: Agents propose side effects via pending_actions. Humans approve before execution.
+        - generic [ref=e38]:
+          - heading "Provider Routing" [level=3] [ref=e39]
+          - paragraph [ref=e40]: Pin OpenRouter providers to keep prompt caches warm. Save 10x on input costs.
+        - generic [ref=e41]:
+          - heading "Knowledge Search" [level=3] [ref=e42]
+          - paragraph [ref=e43]: R2R + FastMCP for searchable document collections. Per-tenant scoping built in.
+        - generic [ref=e44]:
+          - heading "Mock Mode" [level=3] [ref=e45]
+          - paragraph [ref=e46]: Full API without an LLM key. Schema-compliant mock responses for development.
+    - generic [ref=e47]:
+      - heading "Architecture" [level=2] [ref=e50]
+      - generic [ref=e51]:
+        - paragraph [ref=e52]: Your product
+        - paragraph [ref=e53]: schemas + tools + prompt + host persistence
+        - paragraph [ref=e54]: │
+        - paragraph [ref=e55]: ▼
+        - paragraph [ref=e56]: Agent2 framework
+        - paragraph [ref=e57]: create_agent() · create_app() · task API · auth · errors
+        - paragraph [ref=e58]: message history · approval workflow · provider policy · tool policies
+        - paragraph [ref=e59]: │
+        - paragraph [ref=e60]: ▼
+        - paragraph [ref=e61]: Optional capabilities
+        - paragraph [ref=e62]: Knowledge MCP · R2R · OCR · Langfuse · Promptfoo
+    - generic [ref=e63]:
+      - heading "Built with Agent2" [level=2] [ref=e66]
+      - generic [ref=e67]:
+        - heading "MandantLink" [level=3] [ref=e68]
+        - paragraph [ref=e69]: Autonomous invoice processing for German tax firms. A single AI agent reads invoices via OCR, validates against accounting knowledge, asks clarifying questions, and produces DATEV-ready booking entries.
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - paragraph [ref=e72]: 4M+
+            - paragraph [ref=e73]: documents processed
+          - generic [ref=e74]:
+            - paragraph [ref=e75]: $200k+
+            - paragraph [ref=e76]: revenue since Sep 2025
+    - generic [ref=e77]:
+      - heading "Ready to ship?" [level=2] [ref=e78]
+      - paragraph [ref=e79]: Open source. MIT licensed. Production-tested.
+      - link "Get started on GitHub →" [ref=e80] [cursor=pointer]:
+        - /url: https://github.com/duozokker/agent2
+    - contentinfo [ref=e81]:
+      - paragraph [ref=e82]:
+        - text: Built by
+        - link "Artesiana" [ref=e83] [cursor=pointer]:
+          - /url: https://artesiana.de
+      - paragraph [ref=e84]: MIT License · PydanticAI + FastAPI
+  - button "Open Next.js Dev Tools" [ref=e90] [cursor=pointer]:
+    - img [ref=e91]
+  - alert [ref=e94]

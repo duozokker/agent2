@@ -1,0 +1,13 @@
+name: provider-policy-demo
+description: "Framework demo for OpenRouter provider affinity and cache-aware routing"
+model: openrouter/anthropic/claude-sonnet-4
+port: 8006
+timeout_seconds: 120
+max_retries: 3
+collections: []
+provider_order:
+  - anthropic
+provider_policy:
+  allow_fallbacks: true
+capabilities:
+  - provider_policy

@@ -1,0 +1,54 @@
+# Agent2
+
+Agent2 is a production agent framework built on PydanticAI and FastAPI.
+
+It is designed for products that need typed, hostable, stateful agents instead of one-off demos.
+
+## Primary abstractions
+
+- [`shared/runtime.py`](./shared/runtime.py): `create_agent()` for model setup, prompt resolution, provider policy, and instrumentation
+- [`shared/api.py`](./shared/api.py): `create_app()` for the task API, auth, async execution, pause/resume, and pending action execution
+- [`shared/config.py`](./shared/config.py): agent config and environment settings
+- [`shared/message_history.py`](./shared/message_history.py): serialized PydanticAI message history for pause/resume
+- [`shared/approval_workflow.py`](./shared/approval_workflow.py): generic pending-action execution flow
+- [`shared/tool_policies.py`](./shared/tool_policies.py): tool interception and collection scoping helpers
+
+## Runtime features
+
+- typed outputs through Pydantic models
+- sync and async task execution
+- RFC 7807 error responses
+- source-layout and Docker-layout agent imports
+- `before_run` and `after_run` hooks
+- serialized `message_history`
+- generic `pending_actions`
+- OpenRouter `provider_order` and `provider_policy`
+
+## Optional capabilities
+
+- Knowledge MCP and R2R-backed search
+- OCR / Docling
+- Langfuse prompt management and tracing
+- Promptfoo evaluation suites
+
+## Example agents
+
+- [`agents/example-agent`](./agents/example-agent)
+- [`agents/support-ticket`](./agents/support-ticket)
+- [`agents/code-review`](./agents/code-review)
+- [`agents/invoice`](./agents/invoice)
+- [`agents/rag-test`](./agents/rag-test)
+- [`agents/approval-demo`](./agents/approval-demo)
+- [`agents/resume-demo`](./agents/resume-demo)
+- [`agents/provider-policy-demo`](./agents/provider-policy-demo)
+- [`agents/scoped-tools-demo`](./agents/scoped-tools-demo)
+
+## Docs
+
+- [README](./README.md)
+- [Architecture](./docs/architecture.md)
+- [Creating Agents](./docs/creating-agents.md)
+- [Capabilities](./docs/capabilities.md)
+- [Resume and Conversations](./docs/resume-conversations.md)
+- [Approvals](./docs/approvals.md)
+- [Provider Policy](./docs/provider-policy.md)

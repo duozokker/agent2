@@ -1,0 +1,50 @@
+description: "Example Agent - Document Summarization Quality"
+
+providers:
+  - id: http
+    config:
+      url: "http://localhost:8001/tasks?mode=sync"
+      method: POST
+      headers:
+        Authorization: "Bearer dev-token-change-me"
+        Content-Type: "application/json"
+      body:
+        input:
+          text: "{{prompt}}"
+      transformResponse: "json.result"
+
+prompts:
+  - "{{text}}"
+
+tests:
+  - description: "English document produces valid summary"
+    vars:
+      text: "Machine learning is a subset of artificial intelligence that enables systems to learn and improve from experience without being explicitly programmed. It focuses on developing algorithms that can access data and use it to learn for themselves. The process begins with observations or data, such as examples, direct experience, or instruction."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "JSON.parse(output).title && JSON.parse(output).title.length > 0"
+      - type: javascript
+        value: "JSON.parse(output).confidence >= 0 && JSON.parse(output).confidence <= 1"
+      - type: javascript
+        value: "JSON.parse(output).language === 'en'"
+      - type: javascript
+        value: "JSON.parse(output).key_points.length >= 1"
+      - type: javascript
+        value: "JSON.parse(output).word_count > 0"
+
+  - description: "German document detected as DE"
+    vars:
+      text: "Maschinelles Lernen ist ein Teilgebiet der künstlichen Intelligenz. Es ermöglicht Systemen, aus Erfahrungen zu lernen und sich zu verbessern, ohne explizit programmiert zu werden. Der Prozess beginnt mit Beobachtungen oder Daten."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "JSON.parse(output).language === 'de'"
+
+  - description: "Summary is shorter than input"
+    vars:
+      text: "The quick brown fox jumps over the lazy dog. This classic pangram contains every letter of the English alphabet at least once. It has been used since the late 19th century to test typewriters and computer fonts. The phrase is commonly used in typography and design."
+    assert:
+      - type: is-json
+      - type: javascript
+        value: "JSON.parse(output).summary.length < 500"

@@ -1,0 +1,30 @@
+[app]
+fast_llm = "openrouter/google/gemini-2.0-flash-001"
+quality_llm = "openrouter/google/gemini-2.0-flash-001"
+vlm = "openrouter/google/gemini-2.0-flash-001"
+
+[embedding]
+provider = "litellm"
+base_model = "cohere/embed-multilingual-v3.0"
+base_dimension = 1024
+batch_size = 128
+concurrent_request_limit = 256
+# Cohere does not accept explicit dimensions param — drop it
+add_title_as_prefix = false
+quantization_settings = { quantization_type = "FP32" }
+
+[completion_embedding]
+provider = "litellm"
+base_model = "cohere/embed-multilingual-v3.0"
+base_dimension = 1024
+batch_size = 128
+concurrent_request_limit = 256
+add_title_as_prefix = false
+
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 1024
+chunk_overlap = 512
+automatic_extraction = false
+skip_document_summary = true

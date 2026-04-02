@@ -1,0 +1,8 @@
+name: rag-test
+description: "Test agent that answers questions using ingested knowledge documents"
+model: ""
+port: 8003
+timeout_seconds: 120
+max_retries: 3
+collections:
+  - test-knowledge
