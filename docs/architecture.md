@@ -2,7 +2,9 @@
 
 ## System model
 
-Agent2 separates framework concerns from product concerns.
+Agent2 turns domain experts into production AI agents by separating framework concerns from domain concerns.
+
+The framework handles the production runtime -- API, auth, task execution, knowledge search, pause/resume, and approval workflows. Domain agents encode how a specific expert works -- their prompts, tools, knowledge bases, and judgment patterns.
 
 ### Framework concerns
 
@@ -14,11 +16,13 @@ Agent2 separates framework concerns from product concerns.
 - approval workflow primitives
 - provider routing policy
 - tool interception
+- knowledge search infrastructure
 
-### Product concerns
+### Domain concerns
 
-- business prompts
-- domain tools
+- expert instructions and decision patterns
+- domain tools (OCR, validation, external APIs)
+- knowledge collections (regulations, reference materials, institutional guides)
 - persistence schema
 - external integrations
 - approval UI and operator workflows
@@ -106,21 +110,21 @@ Tool policies are middleware for tool calls. They are useful for:
 
 The framework ships composition and collection helpers. Products can layer their own policies on top.
 
-## Optional infrastructure
+## Infrastructure
 
 ### Default stack
 
-Default Docker starts the core framework loop without requiring RAG infrastructure.
+Default Docker starts the core framework loop without the knowledge search infrastructure. Useful for agents that do not need domain knowledge bases.
 
 ### Full stack
 
-The `full` profile adds:
+The `full` profile adds the knowledge and document processing layer:
 
-- R2R
-- Docling
+- R2R (search and retrieval over expert knowledge bases)
+- Docling (OCR and document conversion)
 - Temporal
 - Temporal UI
 - Knowledge MCP
 - RAG-oriented demos
 
-That split keeps local development cheap while preserving a realistic production topology.
+For domain expert agents, the full stack is the recommended setup. The default stack is available for simpler agents or faster iteration cycles.

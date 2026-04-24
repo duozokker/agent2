@@ -1,6 +1,6 @@
 # Agent2 Copilot Instructions
 
-This is Agent2, a production runtime for AI agents built on PydanticAI and FastAPI.
+This is Agent2, a framework for turning domain experts into production AI agents. Built on PydanticAI and FastAPI.
 
 ## When writing agent code:
 - Import create_agent from shared.runtime

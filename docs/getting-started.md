@@ -1,5 +1,7 @@
 # Getting Started
 
+Agent2 turns domain experts into production AI agents. This guide gets you from zero to a running agent in minutes.
+
 ## Prerequisites
 
 - Docker Desktop
@@ -108,6 +110,7 @@ curl -X POST http://localhost:8004/tasks/<task_id>/actions/execute \
 
 ## Next steps
 
-- [Creating Agents](./creating-agents.md)
-- [Capabilities](./capabilities.md)
+- [Creating Agents](./creating-agents.md) -- or use the `/brain-clone` skill for a guided interview
+- [Knowledge Management](./knowledge-management.md) -- set up the expert's reference materials
+- [Capabilities](./capabilities.md) -- add pause/resume, approvals, and more
 - [Deployment and Scaling](./deployment.md)

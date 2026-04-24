@@ -1,6 +1,6 @@
 # Agent2
 
-Production agent framework built on PydanticAI + FastAPI with optional R2R, Langfuse, FastMCP, and OCR capabilities.
+Framework for turning domain experts into production AI agents. Built on PydanticAI + FastAPI with R2R knowledge search, Langfuse observability, FastMCP tool integration, and OCR capabilities.
 
 See [`llms.txt`](./llms.txt) for the compact project map and [`llms-full.txt`](./llms-full.txt) for the expanded framework context.
 
@@ -57,6 +57,17 @@ docker compose --profile full up -d
 - `resume-demo`
 - `provider-policy-demo`
 - `scoped-tools-demo`
+
+## AI-assisted development skills
+
+The following Claude Code skills accelerate agent development:
+
+- `/brain-clone` -- interactive interview that extracts a domain expert's knowledge, decision patterns, and tools, then scaffolds the full agent (recommended starting point)
+- `/creating-agents` -- scaffolds a new agent from template with schema, tools, config, and Docker wiring
+- `/building-domain-experts` -- guidance for agents that need deep domain expertise, document reading, and clarifying questions
+- `/adding-knowledge` -- sets up R2R collections, document ingestion, and Knowledge MCP wiring
+- `/adding-capabilities` -- adds pause/resume, human approval, provider routing, tool scoping, or knowledge search to an existing agent
+- `/debugging-agents` -- systematic diagnosis for framework, config, and runtime issues
 
 ## Common gotchas
 

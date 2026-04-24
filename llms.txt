@@ -1,8 +1,8 @@
 # Agent2
 
-Agent2 is a production agent framework built on PydanticAI and FastAPI.
+Turn domain experts into production AI agents. Built on PydanticAI and FastAPI.
 
-It is designed for products that need typed, hostable, stateful agents instead of one-off demos.
+Agent2 clones how professionals work — their thinking process, tools, reference books, memory, and judgment calls — into typed HTTP services. Open the repo in Claude Code, Codex, Cursor, or Gemini CLI and run `/brain-clone` to create an expert agent through guided interview.
 
 ## Primary abstractions
 
@@ -24,10 +24,12 @@ It is designed for products that need typed, hostable, stateful agents instead o
 - generic `pending_actions`
 - OpenRouter `provider_order` and `provider_policy`
 
-## Optional capabilities
+## Knowledge and domain expertise
 
-- Knowledge MCP and R2R-backed search
-- OCR / Docling
+Knowledge is foundational, not optional. Domain experts rely on reference books, regulations, internal guides, and institutional memory — and so do their agent clones.
+
+- Knowledge MCP and R2R-backed search for professional knowledge bases
+- OCR / Docling for reading real-world documents
 - Langfuse prompt management and tracing
 - Promptfoo evaluation suites
 

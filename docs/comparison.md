@@ -1,12 +1,28 @@
 # When to use Agent2
 
-This document is a honest comparison of Agent2 against alternatives. The goal is to help you decide whether Agent2 is the right tool for your problem -- and to tell you when it is not.
+Agent2 turns domain experts into production AI agents. Not just how they think -- how they work. The tools they use, the books they reference, the judgment calls they make.
+
+This document is an honest comparison of Agent2 against alternatives. The goal is to help you decide whether Agent2 is the right tool for your problem -- and to tell you when it is not.
+
+## Agent2 vs prompt wrappers
+
+Many "AI agent" tools are thin wrappers around a system prompt and an API call. They give you a chatbot with a persona, but no real domain expertise.
+
+Agent2 is different. A domain expert agent built with Agent2 has:
+
+- **Knowledge bases** -- the actual reference materials the expert would consult (regulations, manuals, internal guides), searchable via R2R
+- **Domain tools** -- OCR for reading documents, validation logic, external API integrations
+- **Structured output** -- typed Pydantic models that enforce the shape of the expert's work product
+- **Multi-turn judgment** -- pause/resume and clarifying questions, the way a real expert would handle ambiguity
+- **Human approval** -- pending actions for decisions that need sign-off, matching real-world workflows
+
+A prompt wrapper gives you "an AI that sounds like an accountant." Agent2 gives you an agent that reads invoices, checks them against DATEV/GoBD regulations, asks clarifying questions, and produces compliant booking entries.
 
 ## Agent2 vs building it yourself (PydanticAI + FastAPI)
 
 You absolutely can build this yourself. PydanticAI handles the agent loop, FastAPI handles HTTP. These are excellent libraries and Agent2 uses them directly -- it does not wrap or abstract them away.
 
-But once you go from "working agent in a script" to "production service behind an API", you will end up writing roughly 3,000 lines of framework code that Agent2 already provides:
+But once you go from "working agent in a script" to "production service that clones a domain expert", you will end up writing roughly 3,000 lines of framework code that Agent2 already provides:
 
 - **Auth** with HMAC timing-safe token comparison and fixed-window rate limiting
 - **RFC 7807** error responses (`application/problem+json`) for every failure path
@@ -171,4 +187,4 @@ Both frameworks are production-oriented, but they target different scales of age
 
 ---
 
-Agent2 is for the specific moment when you have a working agent and need to deploy it as a production backend service -- with auth, typed outputs, async execution, pause/resume, approval workflows, and scaling. If that is not your problem, there is probably a simpler tool for your use case.
+Agent2 is for the specific moment when you want to take a domain expert's knowledge and deploy it as a production backend service -- with knowledge search, typed outputs, auth, async execution, pause/resume, approval workflows, and scaling. If that is not your problem, there is probably a simpler tool for your use case.

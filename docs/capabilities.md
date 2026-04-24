@@ -1,6 +1,6 @@
 # Capabilities
 
-Capabilities are optional framework features that products can turn on per agent.
+Capabilities are the framework features that make domain expert agents work in production. A real expert does not just answer questions -- they remember context across conversations, propose actions that need approval, reference their professional knowledge base, and use specialized tools. Each capability below maps to one of those real-world patterns.
 
 They are intentionally generic. The framework provides primitives, not product-specific workflows.
 
@@ -8,7 +8,7 @@ They are intentionally generic. The framework provides primitives, not product-s
 
 ### `resume`
 
-Use when an agent needs multi-turn continuity.
+Use when an agent needs multi-turn continuity -- the way a real expert asks clarifying questions before committing to a decision.
 
 Framework support:
 
@@ -18,7 +18,7 @@ Framework support:
 
 ### `approval_workflow`
 
-Use when an agent can propose side effects that need approval.
+Use when an agent proposes actions that need human sign-off -- the way an accountant flags unusual transactions for review.
 
 Framework support:
 
@@ -48,7 +48,7 @@ Framework support:
 
 ### `knowledge_mcp`
 
-Use when an agent should search shared knowledge collections.
+Use when an agent needs to search professional reference materials -- regulations, manuals, institutional guides. Foundational to the expert cloning pattern.
 
 Framework support:
 

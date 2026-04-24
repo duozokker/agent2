@@ -1,15 +1,16 @@
 # Agent2
 
-Agent2 is a framework for building production agents with a stable HTTP contract and optional enterprise capabilities. It is not a product-specific app. Product code should stay in agent modules and host services; framework code stays in `shared/`.
+Turn domain experts into production AI agents. Agent2 clones how professionals work — their thinking, tools, reference books, memory, and judgment calls — into typed HTTP services with a stable API contract. Open the repo in an AI coding tool and run `/brain-clone` to create an expert agent through guided interview. Product code stays in agent modules; framework code stays in `shared/`.
 
 ## Design goal
 
-The framework should make it easy to build agents that:
+Make it easy to clone domain experts into agents that:
 
+- search and reason over professional knowledge bases
 - expose a clean task API
-- return structured output
+- return structured, validated output
 - pause and resume over multiple turns
-- propose side effects for approval
+- propose side effects for human approval
 - keep provider affinity for cache-aware routing
 - safely call scoped tools and shared knowledge services
 
@@ -167,7 +168,7 @@ This keeps the default developer loop fast while still supporting a full platfor
 
 ## Knowledge and search
 
-Knowledge is optional and lives behind the Knowledge MCP server in [`shared/knowledge_mcp/`](./shared/knowledge_mcp).
+Knowledge is foundational to the expert cloning pattern. Domain experts do not just think -- they reference books, regulations, internal guides, and institutional memory. The Knowledge MCP server in [`shared/knowledge_mcp/`](./shared/knowledge_mcp) gives agents the same access.
 
 Collection metadata is defined in [`knowledge/collections.yaml`](./knowledge/collections.yaml). Agents declare which collections they can search in config. Tool policies can further scope tool calls per run.
 

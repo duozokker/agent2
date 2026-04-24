@@ -2,7 +2,7 @@
 
 ## Overview
 
-Knowledge is an optional capability in Agent2.
+Knowledge is foundational to the expert cloning pattern in Agent2. Domain experts do not just think -- they reference books, regulations, internal procedures, and institutional memory. The knowledge layer gives agents the same access to reference materials that a human expert would have.
 
 The framework uses:
 
@@ -40,7 +40,7 @@ An agent that uses Knowledge MCP should:
 
 ## Default vs full stack
 
-Knowledge infrastructure is not part of the default Docker profile.
+Knowledge infrastructure requires the full Docker profile. For domain expert agents, this is the recommended setup.
 
 Use:
 
@@ -48,4 +48,4 @@ Use:
 docker compose --profile full up -d
 ```
 
-when you need Knowledge MCP, R2R, Docling, or the RAG-oriented demos.
+when you need Knowledge MCP, R2R, Docling, or the RAG-oriented demos. The default profile is available for simpler agents that do not need knowledge search.

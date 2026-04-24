@@ -1,8 +1,14 @@
 # Agent2
 
-The production runtime for AI agents. PydanticAI + FastAPI + R2R + Langfuse + FastMCP.
+Turn domain experts into production AI agents. PydanticAI + FastAPI + R2R + Langfuse + FastMCP.
+
+Clone the way professionals actually work -- their tools, references, judgment calls, and decision patterns -- into typed, hostable agents with knowledge search, multi-turn conversations, and human approval workflows.
 
 See @llms.txt for the compact project map and @llms-full.txt for expanded framework context.
+
+## Creating a Domain Expert Agent
+
+The recommended way to create a new agent is the `/brain-clone` skill, which runs an interactive interview to extract a domain expert's identity, knowledge sources, decision patterns, and tools, then scaffolds the full agent. For manual setup, see "Creating a New Agent" below.
 
 ## Build & Test
 
@@ -41,7 +47,7 @@ docker compose build example-agent && docker compose up -d example-agent --no-de
 - `create_agent()` in `shared/runtime.py` is the only way to build agents
 - `create_app()` in `shared/api.py` is the only way to build FastAPI apps
 - Prompts are code-first by default; Langfuse is optional for iteration and observability
-- Knowledge bases are R2R collections defined in `knowledge/collections.yaml`
+- Knowledge bases are R2R collections defined in `knowledge/collections.yaml` -- foundational to the expert cloning pattern
 
 ## Key Patterns
 

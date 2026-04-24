@@ -1,5 +1,13 @@
 # Creating Agents
 
+## Recommended: use `/brain-clone`
+
+The fastest way to create a domain expert agent is the `/brain-clone` skill in Claude Code. It runs an interactive interview to extract the expert's identity, knowledge sources, decision patterns, and tools, then scaffolds the complete agent -- schema, instructions, config, tools, and Docker wiring.
+
+For agents that need deep domain expertise (reading documents, checking regulations, asking clarifying questions), also see the `/building-domain-experts` skill.
+
+The manual steps below cover the same process for cases where you want full control.
+
 ## 1. Copy the template
 
 ```bash
