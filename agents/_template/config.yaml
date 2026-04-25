@@ -5,6 +5,8 @@ port: 8000
 timeout_seconds: 120
 max_retries: 3
 collections: []
+# Set provider_order for OpenRouter cache affinity. Fallbacks are disabled by
+# default; opt in with provider_policy.allow_fallbacks: true when needed.
 provider_order: []
 provider_policy: {}
 capabilities: []
