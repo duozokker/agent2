@@ -17,7 +17,7 @@ The main example is prompt caching:
 provider_order:
   - anthropic
 provider_policy:
-  allow_fallbacks: true
+  allow_fallbacks: false
 ```
 
 ## Framework behavior
@@ -29,6 +29,9 @@ This gives products a framework-level control point for:
 - provider affinity
 - cache-aware routing
 - fallback tolerance
+
+`provider_order` is sticky by default: when a provider order is configured, OpenRouter fallbacks are disabled unless the agent explicitly sets `provider_policy.allow_fallbacks: true`.
+Provider policy only applies to `openrouter/*` models; configuring it for direct provider models is treated as a configuration error.
 
 ## Failure handling
 

@@ -36,6 +36,8 @@ Framework support:
 - `provider_policy`
 - OpenRouter model settings wiring in `create_agent()`
 
+By default, `provider_order` is sticky: fallbacks are disabled unless `provider_policy.allow_fallbacks` is explicitly set to `true`.
+
 ### `scoped_tools`
 
 Use when tool calls need request-scoped constraints.

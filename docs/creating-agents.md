@@ -45,7 +45,7 @@ capabilities: []
 Use:
 
 - `collections` for knowledge access
-- `provider_order` and `provider_policy` for cache-aware routing
+- `provider_order` and `provider_policy` for cache-aware routing; `provider_order` disables OpenRouter fallbacks by default
 - `capabilities` to declare optional framework features
 
 ## 4. Create the runtime

@@ -96,6 +96,8 @@ OpenRouter provider policy belongs in framework config because it changes runtim
 - `provider_order` pins preferred providers
 - `provider_policy.allow_fallbacks` controls fallback behavior
 
+When `provider_order` is set, fallbacks are disabled by default so repeated tool-call rounds stay on the same provider for prompt-cache reuse.
+
 This matters when prompt caching or provider-specific billing makes repeated routing decisions expensive.
 
 ## Tool policies

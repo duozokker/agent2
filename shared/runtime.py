@@ -24,7 +24,7 @@ from typing import Any
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
-from shared.config import Settings, load_agent_config
+from shared.config import AgentConfig, Settings, load_agent_config
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +98,47 @@ def _build_model(model_id: str, settings: Settings) -> Any:
 
     # All other providers: use the string shorthand (groq:, mistral:, openai:, etc.)
     return normalized
+
+
+def _openrouter_provider_policy(config: AgentConfig, resolved_model: str) -> dict[str, Any] | None:
+    """Return validated OpenRouter provider settings for an agent config.
+
+    ``provider_order`` means sticky routing by default: OpenRouter should keep
+    calls on the configured provider order unless the agent explicitly opts into
+    fallbacks with ``provider_policy.allow_fallbacks: true``.
+    """
+    provider_policy = dict(config.provider_policy)
+    configured_order = config.provider_order
+    policy_order = provider_policy.get("order")
+
+    if policy_order is not None and configured_order and policy_order != configured_order:
+        raise RuntimeError(
+            f"Agent '{config.name}' has conflicting provider_order and provider_policy.order values."
+        )
+
+    provider_order = policy_order if policy_order is not None else configured_order
+    if not provider_order or resolved_model == "test":
+        return None
+
+    if not resolved_model.startswith("openrouter:"):
+        raise RuntimeError(
+            f"Agent '{config.name}' configures provider_order/provider_policy, "
+            f"but selected model '{resolved_model}' is not an OpenRouter model."
+        )
+
+    if not isinstance(provider_order, list) or not all(
+        isinstance(provider, str) and provider.strip() for provider in provider_order
+    ):
+        raise RuntimeError(f"Agent '{config.name}' provider_order must be a non-empty list of provider names.")
+
+    allow_fallbacks = provider_policy.get("allow_fallbacks", False)
+    if not isinstance(allow_fallbacks, bool):
+        raise RuntimeError(f"Agent '{config.name}' provider_policy.allow_fallbacks must be a boolean.")
+
+    return {
+        "order": [provider.strip() for provider in provider_order],
+        "allow_fallbacks": allow_fallbacks,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -189,31 +230,22 @@ def create_agent(
     # -- Instrumentation -----------------------------------------------------
     _setup_instrumentation(settings)
 
+    provider_policy = _openrouter_provider_policy(config, resolved_model)
+
     # -- Build the model object ------------------------------------------------
     model_obj = _build_model(resolved_model, settings)
 
-    provider_policy = dict(config.provider_policy)
-    if config.provider_order and "order" not in provider_policy:
-        provider_policy["order"] = config.provider_order
-    allow_fallbacks = bool(provider_policy.get("allow_fallbacks", True))
-
     model_settings: dict[str, Any] | None = None
-    provider_order = provider_policy.get("order", [])
-    if provider_order and resolved_model != "test":
+    if provider_policy is not None:
         try:
             from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
-            model_settings = OpenRouterModelSettings(
-                openrouter_provider={
-                    "order": provider_order,
-                    "allow_fallbacks": allow_fallbacks,
-                }
-            )
+            model_settings = OpenRouterModelSettings(openrouter_provider=provider_policy)
             logger.info(
                 "Agent '%s' pinned to provider(s): %s (allow_fallbacks=%s)",
                 name,
-                provider_order,
-                allow_fallbacks,
+                provider_policy["order"],
+                provider_policy["allow_fallbacks"],
             )
         except ImportError:
             logger.debug("OpenRouterModelSettings not available; skipping provider pinning")
