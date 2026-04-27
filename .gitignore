@@ -35,3 +35,4 @@ htmlcov/
 
 # Promptfoo
 .promptfoo/
+.gstack/

@@ -1,0 +1,93 @@
+description: "Procurement Compliance Officer - Brain Clone Flagship Eval"
+
+providers:
+  - id: http
+    config:
+      url: "http://localhost:8013/tasks?mode=sync"
+      method: POST
+      headers:
+        Authorization: "Bearer {{env.AGENT_TOKEN}}"
+        Content-Type: "application/json"
+      body:
+        input: "{{input}}"
+      responseParser: "json.result"
+
+prompts:
+  - "{{input}}"
+
+tests:
+  - description: "Routine hardware request is approved with pending approval action"
+    vars:
+      input:
+        purchase_request:
+          request_id: "REQ-EVAL-001"
+          requester_email: "dev@example.com"
+          department_id: "engineering"
+          vendor_name: "Acme Hardware"
+          category: "hardware"
+          amount: 4200
+          currency: "USD"
+          business_justification: "Replacement laptops for developer onboarding."
+          purchase_type: "replacement"
+        request_context:
+          organization: "ExampleCo"
+          region: "US"
+          knowledge_collections:
+            - procurement-policy-core
+            - procurement-vendor-risk
+    assert:
+      - type: javascript
+        value: "output.status === 'approved'"
+      - type: javascript
+        value: "output.approval && output.approval.request_id === 'REQ-EVAL-001'"
+      - type: javascript
+        value: "output.pending_actions.some(a => a.action === 'create_approval_record')"
+
+  - description: "Sole-source software without rationale asks for clarification"
+    vars:
+      input:
+        purchase_request:
+          request_id: "REQ-EVAL-002"
+          requester_email: "owner@example.com"
+          department_id: "engineering"
+          vendor_name: "CollabCloud"
+          category: "software"
+          amount: 38000
+          currency: "USD"
+          business_justification: "Renew collaboration platform."
+          purchase_type: "renewal"
+          sole_source_requested: true
+          handles_sensitive_data: true
+        request_context:
+          organization: "ExampleCo"
+          region: "US"
+    assert:
+      - type: javascript
+        value: "output.status === 'needs_clarification'"
+      - type: javascript
+        value: "output.missing_fields.includes('sole_source_rationale') || output.clarification.message.toLowerCase().includes('sole-source')"
+      - type: javascript
+        value: "output.pending_actions.some(a => a.action === 'send_clarification_request')"
+
+  - description: "Blocked vendor is rejected"
+    vars:
+      input:
+        purchase_request:
+          request_id: "REQ-EVAL-003"
+          requester_email: "ops@example.com"
+          department_id: "marketing"
+          vendor_name: "Northstar Intermediaries"
+          category: "services"
+          amount: 12000
+          currency: "USD"
+          business_justification: "Regional event support."
+        request_context:
+          organization: "ExampleCo"
+          region: "US"
+    assert:
+      - type: javascript
+        value: "output.status === 'rejected'"
+      - type: javascript
+        value: "output.vendor_risk === 'blocked'"
+      - type: javascript
+        value: "!output.approval"

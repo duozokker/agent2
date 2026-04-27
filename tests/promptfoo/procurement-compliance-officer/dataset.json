@@ -1,0 +1,33 @@
+[
+  {
+    "name": "routine_hardware",
+    "expected_status": "approved",
+    "purchase_request": {
+      "request_id": "REQ-DATA-001",
+      "requester_email": "dev@example.com",
+      "department_id": "engineering",
+      "vendor_name": "Acme Hardware",
+      "category": "hardware",
+      "amount": 4200,
+      "currency": "USD",
+      "business_justification": "Replacement laptops for developer onboarding.",
+      "purchase_type": "replacement"
+    }
+  },
+  {
+    "name": "missing_sole_source",
+    "expected_status": "needs_clarification",
+    "purchase_request": {
+      "request_id": "REQ-DATA-002",
+      "requester_email": "owner@example.com",
+      "department_id": "engineering",
+      "vendor_name": "CollabCloud",
+      "category": "software",
+      "amount": 38000,
+      "currency": "USD",
+      "business_justification": "Renew collaboration platform.",
+      "purchase_type": "renewal",
+      "sole_source_requested": true
+    }
+  }
+]

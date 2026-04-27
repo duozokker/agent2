@@ -6,6 +6,8 @@ The fastest way to create a domain expert agent is the `/brain-clone` skill in C
 
 For agents that need deep domain expertise (reading documents, checking regulations, asking clarifying questions), also see the `/building-domain-experts` skill.
 
+Study [`agents/procurement-compliance-officer`](../agents/procurement-compliance-officer) before building a serious domain agent. It is the canonical in-repo example for the full Agent2 pattern: knowledge books, three outcomes, schema validators, per-run toolsets, memory, approval, resume, `after_run`, mock mode, tests, and evals.
+
 The manual steps below cover the same process for cases where you want full control.
 
 ## 1. Copy the template
@@ -72,7 +74,9 @@ def lookup_vendor(name: str) -> dict[str, str]:
     return {"normalized_name": name.strip().title()}
 ```
 
-For MCP-based tools, pass `toolsets=[...]` into `create_agent()`.
+For static MCP-based tools, pass `toolsets=[...]` into `create_agent()`. For
+request-scoped MCP tools, `before_run()` may return `_toolsets`; the API runtime
+passes them to `Agent.run(toolsets=...)` and keeps them out of the user prompt.
 
 ## 6. Use hooks when needed
 
@@ -126,3 +130,5 @@ Create a service in [`docker-compose.yml`](../docker-compose.yml) using your age
 - add collection names to `config.yaml`
 - attach a Knowledge MCP toolset
 - optionally scope search at runtime through tool policies
+- add real source documents under `knowledge/books/<collection>/`
+- add Promptfoo evals that prove the agent finds and applies the knowledge

@@ -1,0 +1,10 @@
+name: cultural-hype-analyst
+description: "Analyzes cultural hype and matches it to Polymarket paper-trade opportunities"
+model: ""
+port: 8010
+timeout_seconds: 180
+max_retries: 3
+collections: []
+capabilities:
+  - resume
+  - approval_workflow

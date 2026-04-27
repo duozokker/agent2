@@ -53,13 +53,15 @@ Optional services
 1. Client sends `POST /tasks?mode=sync`
 2. `shared/api.py` validates the body and enforces auth
 3. The runtime loads the agent module from Docker layout or source layout
-4. Optional `before_run()` mutates validated input
-5. Optional `message_history` is deserialized
-6. PydanticAI executes the run
-7. Output is validated against the declared schema
-8. `_message_history` is serialized back into the result
-9. Optional `after_run()` persists or annotates output
-10. API returns a typed result
+4. Optional `message_history` is deserialized
+5. Optional `before_run()` mutates validated input, injects `_instructions`, and
+   may provide per-run `_toolsets`
+6. Runtime-only control fields are stripped from the user prompt
+7. PydanticAI executes the run
+8. Output is validated against the declared schema
+9. `_message_history` is serialized back into the result
+10. Optional `after_run()` persists or annotates output
+11. API returns a typed result
 
 ### Async run
 
@@ -112,6 +114,9 @@ Tool policies are middleware for tool calls. They are useful for:
 
 The framework ships composition and collection helpers. Products can layer their own policies on top.
 
+For MCP clients that must be request-scoped, agents can return `_toolsets` from
+`before_run()`. The API runtime passes them into `Agent.run(toolsets=...)`.
+
 ## Infrastructure
 
 ### Default stack
@@ -128,5 +133,6 @@ The `full` profile adds the knowledge and document processing layer:
 - Temporal UI
 - Knowledge MCP
 - RAG-oriented demos
+- full-pattern domain examples such as `procurement-compliance-officer`
 
 For domain expert agents, the full stack is the recommended setup. The default stack is available for simpler agents or faster iteration cycles.

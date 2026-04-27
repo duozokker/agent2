@@ -1,0 +1,10 @@
+name: scandal-market-finder
+description: "Finds Polymarket markets that are sensitive to scandals, reputation shocks, and social-media narratives"
+model: ""
+port: 8012
+timeout_seconds: 180
+max_retries: 3
+collections: []
+capabilities:
+  - resume
+

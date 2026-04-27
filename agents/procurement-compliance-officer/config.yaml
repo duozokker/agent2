@@ -1,0 +1,16 @@
+name: procurement-compliance-officer
+description: "Brain-clone style procurement compliance officer for purchase-request review"
+model: ""
+port: 8013
+timeout_seconds: 300
+max_retries: 3
+collections:
+  - procurement-policy-core
+  - procurement-vendor-risk
+provider_order: []
+provider_policy: {}
+capabilities:
+  - resume
+  - approval_workflow
+  - knowledge_mcp
+  - scoped_tools

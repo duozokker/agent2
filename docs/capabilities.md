@@ -57,6 +57,8 @@ Framework support:
 - Knowledge MCP service
 - collection metadata in `knowledge/collections.yaml`
 - optional tool scoping
+- static toolsets on `create_agent(...)`
+- per-run `_toolsets` returned by `before_run()` for request-scoped MCP clients
 
 ## Capability metadata
 

@@ -4,6 +4,26 @@ All notable changes to Agent2 will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.2.0] - 2026-04-28
+
+### Added
+- Full Brain Clone flagship agent: `procurement-compliance-officer`.
+- Public market research example agents: `scandal-market-finder`, `market-research-desk`, and `cultural-hype-analyst`.
+- Interview evaluation example agent.
+- Brain Clone and Sachbearbeiter pattern documentation.
+- Procurement knowledge collections, seed books, and Promptfoo evals.
+- `.agents` skill tree for AI coding tools that read AgentSkills-compatible skills.
+
+### Changed
+- Runtime now supports per-run `_toolsets` returned from `before_run()`.
+- Brain Clone skills now use the Sachbearbeiter Chain-of-Thought pattern as the canonical agent design.
+- `AGENTS.md`, `CLAUDE.md`, `llms.txt`, and `llms-full.txt` now orient AI coding agents toward the Agent2 vision and flagship examples.
+- README and framework docs now distinguish primitive demos from full domain-expert examples.
+
+### Fixed
+- Runtime-only `_instructions`, `_toolsets`, and `message_history` are stripped from user prompt payloads.
+- Knowledge MCP toolsets can be created fresh per request to avoid shared async cancel-scope issues.
+
 ## [0.1.0] - 2026-04-01
 
 ### Added

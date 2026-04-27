@@ -1,22 +1,44 @@
 # Agent2
 
-Turn domain experts into production AI agents. Agent2 clones how professionals work — their thinking, tools, reference books, memory, and judgment calls — into typed HTTP services with a stable API contract. Open the repo in an AI coding tool and run `/brain-clone` to create an expert agent through guided interview. Product code stays in agent modules; framework code stays in `shared/`.
+Agent2 turns domain experts into production AI agents. The framework is for
+building typed, hostable backend agents that work like professionals: they read
+documents, consult books, use tools, remember context, ask clarifying questions,
+propose side effects for approval, and return validated structured output.
 
-## Design goal
+Product code stays in agent modules. Framework code stays in `shared/`.
 
-Make it easy to clone domain experts into agents that:
+## Design Goal
 
-- search and reason over professional knowledge bases
-- expose a clean task API
-- return structured, validated output
-- pause and resume over multiple turns
-- propose side effects for human approval
-- keep provider affinity for cache-aware routing
-- safely call scoped tools and shared knowledge services
+Make AI coding agents such as Claude Code, Codex, Cursor, and Gemini CLI able to
+open this repo and immediately understand how to build Agent2 agents.
+
+The target agent is not a chatbot and not a deterministic script. It is a
+professional workspace:
+
+- identity and professional mindset
+- reference books and knowledge packages
+- domain-specific tools
+- memory and case history
+- observable review process
+- three mutually exclusive outcomes
+- typed output contract
+- sandboxed side effects
+- host-controlled persistence and approval
+
+## Agent2 Laws
+
+1. The prompt teaches how to think and work; books contain what to know.
+2. Add domain rules as knowledge documents before adding code tables.
+3. Tools should be named in domain language, not generic abstractions.
+4. Every serious domain agent has complete/clarify/reject outcomes.
+5. A schema validator is part of the agent, not optional polish.
+6. Side effects are pending actions until a host or human approves them.
+7. Resume uses `message_history`; the agent continues the case, not a fresh run.
+8. Evals must test real domain behavior.
 
 ## Public API
 
-Every agent exposes:
+Every agent service exposes:
 
 - `GET /health`
 - `POST /tasks?mode=sync`
@@ -24,195 +46,181 @@ Every agent exposes:
 - `GET /tasks/{task_id}`
 - `POST /tasks/{task_id}/actions/execute`
 
-`POST /tasks` accepts `{"input": {...}}`. The input object may include:
+`POST /tasks` accepts `{"input": {...}}`.
 
-- product-specific fields like `text`, `question`, or IDs
-- `message_history` for pause/resume
+Input may include product fields such as `text`, `purchase_request`, IDs, or
+`message_history`. Results may include typed output, `_message_history`, and
+`pending_actions`. Errors use RFC 7807 `application/problem+json`.
 
-Results may include:
+## Core Modules
 
-- the typed output declared by the agent
-- `_message_history` for the next turn
-- `pending_actions` when host approval is required
-
-Errors use RFC 7807 `application/problem+json`.
-
-## Core modules
-
-### [`shared/runtime.py`](./shared/runtime.py)
+### `shared/runtime.py`
 
 Responsibilities:
 
-- load agent config from YAML
+- load per-agent config
 - resolve model IDs
 - build OpenRouter-backed PydanticAI agents
-- apply provider pinning through `provider_order` and `provider_policy`
-- fetch optional prompts from Langfuse
+- apply provider policy
+- fetch optional Langfuse prompts
 - expose `create_agent()`
 
-Important behavior:
+Rules:
 
-- `instructions=` is the preferred prompt parameter
-- `system_prompt=` is supported as a backward-compatible alias
-- missing `OPENROUTER_API_KEY` triggers test-model mode so the API can still operate in mock mode
+- use `instructions=` for new agents
+- `system_prompt=` is compatibility only
+- no LLM key triggers PydanticAI test model and API mock behavior
+- pass MCP toolsets through `toolsets=[]` or per-run `_toolsets`
 
-### [`shared/api.py`](./shared/api.py)
+### `shared/api.py`
 
 Responsibilities:
 
 - expose the FastAPI app via `create_app()`
 - validate request shape
 - enforce auth and rate limiting
-- load agent modules from Docker or source layout
+- load source-layout or Docker-layout agents
 - run sync and async tasks
 - deserialize `message_history`
 - invoke `before_run` and `after_run`
-- execute pending actions through the approval workflow
+- pass dynamic `_instructions` and per-run `_toolsets` into `Agent.run()`
+- strip runtime control fields from the user prompt
+- execute pending actions
 - normalize failures as problem responses
 
-The runtime recognizes these optional agent hooks:
+Agent hooks:
 
 - `before_run(input_data) -> dict`
 - `after_run(input_data, output) -> None`
 - `mock_result(input_data) -> dict`
 - `execute_action(action) -> dict`
 
-### [`shared/message_history.py`](./shared/message_history.py)
+### `shared/message_history.py`
 
-Framework primitive for pause/resume:
+Serializes and deserializes PydanticAI messages so hosts can persist
+conversation state anywhere.
 
-- serialize PydanticAI messages into JSON-safe data
-- deserialize them back into message objects
-- host applications can store this data wherever they want
+### `shared/approval_workflow.py`
 
-### [`shared/approval_workflow.py`](./shared/approval_workflow.py)
+Executes approved pending actions through an injected action executor and updates
+stored task state.
 
-Generic human-in-the-loop primitive:
+### `shared/tool_policies.py`
 
-- validates `pending_actions`
-- executes one action through an injected executor
-- removes completed actions from the stored result
-- appends `_executed_actions`
-- persists the updated run state
+Provides composition helpers for request-scoped tool interception, including
+collection scoping.
 
-### [`shared/tool_policies.py`](./shared/tool_policies.py)
+## Canonical Agent Anatomy
 
-Tool interception layer:
+A full Agent2 agent directory contains:
 
-- `compose_tool_policies(...)`
-- `collection_scope_policy(...)`
+- `schemas.py`: typed output models, status literals, validators
+- `agent.py`: prompt, `create_agent`, tool registration, hooks, mock result
+- `tools.py`: domain tools and sandbox tool implementations
+- `config.yaml`: model, timeout, collections, capabilities
+- `main.py`: `create_app("<agent-name>")`
+- `Dockerfile`: service image
 
-This is where products can inject per-run scoping, validation, or argument enrichment.
+Full domain agents should also add:
 
-## Agent configuration
+- knowledge books in `knowledge/books/<collection>/`
+- collection entries in `knowledge/collections.yaml`
+- tests under `tests/test_agents/`
+- Promptfoo evals under `tests/promptfoo/<agent>/`
 
-`agents/<name>/config.yaml` supports:
+## Canonical Examples
 
-- `name`
-- `description`
-- `model`
-- `port`
-- `timeout_seconds`
-- `max_retries`
-- `collections`
-- `provider_order`
-- `provider_policy`
-- `capabilities`
+### Full Pattern
 
-The `capabilities` list is metadata for hosts and docs. It advertises which framework features an agent intends to use.
+- `agents/procurement-compliance-officer`: the in-repo flagship. It demonstrates
+  Brain Clone prompt architecture, Knowledge MCP, request-scoped collection
+  filtering, per-run MCP toolsets from `before_run`, memory, sandbox approvals,
+  three outcomes, validators, mock mode, `after_run`, tests, and evals.
 
-## Example agents and demos
+### Reference Pattern
 
-### Product-style examples
+- `docs/reference-agents/sachbearbeiter-pattern.md`: explains the
+  production-proven Sachbearbeiter architecture: one professional agent handles
+  one complete case from document intake to review, communication, and typed
+  output.
 
-- [`agents/example-agent`](./agents/example-agent): minimal structured-output reference
-- [`agents/support-ticket`](./agents/support-ticket): ticket classification, action items, draft responses
-- [`agents/code-review`](./agents/code-review): code quality analysis with structured findings
-- [`agents/invoice`](./agents/invoice): invoice data extraction with tax validation
-- [`agents/rag-test`](./agents/rag-test): RAG-enabled example
+### Primitive Demos
 
-### Framework demos
+- `approval-demo`: pending actions
+- `resume-demo`: pause/resume
+- `provider-policy-demo`: provider routing
+- `scoped-tools-demo`: tool scoping
+- `rag-test`: basic Knowledge MCP search
+- `example-agent`, `support-ticket`, `code-review`, `invoice`: small reference
+  agents
 
-- [`agents/approval-demo`](./agents/approval-demo): emits `pending_actions`
-- [`agents/resume-demo`](./agents/resume-demo): demonstrates `_message_history`
-- [`agents/provider-policy-demo`](./agents/provider-policy-demo): demonstrates provider affinity config
-- [`agents/scoped-tools-demo`](./agents/scoped-tools-demo): demonstrates scoped MCP tool calls
+## Knowledge
 
-### Template
+Knowledge is foundational. Domain experts rely on books, policies, regulations,
+reference material, and institutional notes. Agent2 gives agents the same
+pattern through R2R collections and Knowledge MCP.
 
-- [`agents/_template`](./agents/_template): starting point for new agents, including hook examples
+Collection metadata lives in `knowledge/collections.yaml`. Source documents live
+under `knowledge/books/<collection>/`.
 
-## Deployment model
+The full Docker profile starts R2R and Knowledge MCP:
 
-### Default stack
+```bash
+docker compose --profile full up -d
+```
 
-`docker compose up -d` starts the framework core:
+Ingest collections with:
 
-- Postgres
-- Redis
-- Langfuse
-- example agents and framework demos that do not require RAG
+```bash
+python -m shared.ingest --all
+```
 
-### Full stack
+## Build and Test
 
-`docker compose --profile full up -d` also starts:
+```bash
+uv sync --extra dev
+uv run pytest tests/ -v
+docker compose up -d
+docker compose --profile full up -d
+```
 
-- R2R
-- Docling
-- Temporal
-- Temporal UI
-- Knowledge MCP
-- RAG and scoped-tool demos
+Promptfoo eval example:
 
-This keeps the default developer loop fast while still supporting a full platform stack when needed.
+```bash
+npx promptfoo eval -c tests/promptfoo/procurement-compliance-officer/eval.yaml
+```
 
-## Knowledge and search
+## AI Coding Agent Guidance
 
-Knowledge is foundational to the expert cloning pattern. Domain experts do not just think -- they reference books, regulations, internal guides, and institutional memory. The Knowledge MCP server in [`shared/knowledge_mcp/`](./shared/knowledge_mcp) gives agents the same access.
+When creating a new domain agent:
 
-Collection metadata is defined in [`knowledge/collections.yaml`](./knowledge/collections.yaml). Agents declare which collections they can search in config. Tool policies can further scope tool calls per run.
+1. Use `/brain-clone` first.
+2. Study `agents/procurement-compliance-officer`.
+3. Put domain facts in books.
+4. Put the expert's Sachbearbeiter Chain-of-Thought in the prompt.
+5. Use three outcomes and a validator.
+6. Sandbox side effects with pending actions.
+7. Add tests and evals that prove behavior.
 
-## Observability
+When changing framework behavior:
 
-Langfuse is optional:
+- update docs and skills if the contract changes
+- add unit tests under `tests/test_shared/`
+- preserve source-layout and Docker-layout imports
+- do not break mock mode
 
-- prompt management
-- traces
-- token and cost tracking
-- eval comparisons
+## Documentation Index
 
-Prompts are code-first by default. Use Langfuse only when you want prompt registry behavior or tracing.
-
-## Testing
-
-Unit tests cover:
-
-- auth and problem responses
-- task API behavior
-- message history serialization
-- approval workflow
-- provider policy wiring
-- tool policy composition
-- source-layout agent imports
-
-Docker verification covers:
-
-- compose config consistency
-- default stack health
-- full profile health
-- end-to-end demo calls
-
-## Documentation index
-
+- [AGENTS.md](./AGENTS.md)
 - [README](./README.md)
+- [Brain Clone Pattern](./docs/brain-clone-pattern.md)
+- [Sachbearbeiter Pattern](./docs/reference-agents/sachbearbeiter-pattern.md)
 - [Architecture](./docs/architecture.md)
-- [Getting Started](./docs/getting-started.md)
 - [Creating Agents](./docs/creating-agents.md)
 - [Capabilities](./docs/capabilities.md)
-- [Resume and Conversations](./docs/resume-conversations.md)
-- [Approvals](./docs/approvals.md)
-- [Provider Policy](./docs/provider-policy.md)
 - [Knowledge Management](./docs/knowledge-management.md)
+- [Approvals](./docs/approvals.md)
+- [Resume and Conversations](./docs/resume-conversations.md)
+- [Provider Policy](./docs/provider-policy.md)
 - [Observability](./docs/observability.md)
 - [Deployment and Scaling](./docs/deployment.md)
-- [When to use Agent2](./docs/comparison.md)

@@ -1,49 +1,47 @@
 # Agent2
 
-Turn domain experts into production AI agents. Built on PydanticAI and FastAPI.
+> Agent2 turns domain experts into production AI agents. It clones how
+> professionals work: their workspace, books, tools, memory, clarification
+> loops, approval flow, and typed work product.
 
-Agent2 clones how professionals work — their thinking process, tools, reference books, memory, and judgment calls — into typed HTTP services. Open the repo in Claude Code, Codex, Cursor, or Gemini CLI and run `/brain-clone` to create an expert agent through guided interview.
+Agent2 is built on PydanticAI and FastAPI. Open this repo in Claude Code, Codex,
+Cursor, Gemini CLI, or another coding agent and use `/brain-clone` for serious
+domain agents.
 
-## Primary abstractions
+The most important distinction: prompts teach the expert's Sachbearbeiter Chain-of-Thought; knowledge
+books contain what the expert knows. Do not replace the knowledge layer with
+hardcoded lookup tables.
 
-- [`shared/runtime.py`](./shared/runtime.py): `create_agent()` for model setup, prompt resolution, provider policy, and instrumentation
-- [`shared/api.py`](./shared/api.py): `create_app()` for the task API, auth, async execution, pause/resume, and pending action execution
-- [`shared/config.py`](./shared/config.py): agent config and environment settings
-- [`shared/message_history.py`](./shared/message_history.py): serialized PydanticAI message history for pause/resume
-- [`shared/approval_workflow.py`](./shared/approval_workflow.py): generic pending-action execution flow
-- [`shared/tool_policies.py`](./shared/tool_policies.py): tool interception and collection scoping helpers
+## Primary Files
 
-## Runtime features
+- [AGENTS.md](./AGENTS.md): root instructions for coding agents.
+- [CLAUDE.md](./CLAUDE.md): Claude Code entry point that imports AGENTS.md.
+- [llms-full.txt](./llms-full.txt): expanded framework context.
+- [shared/runtime.py](./shared/runtime.py): `create_agent()` and model setup.
+- [shared/api.py](./shared/api.py): `create_app()`, task API, hooks, resume,
+  per-run toolsets, and approval endpoint.
+- [knowledge/collections.yaml](./knowledge/collections.yaml): knowledge
+  collection catalog.
 
-- typed outputs through Pydantic models
-- sync and async task execution
-- RFC 7807 error responses
-- source-layout and Docker-layout agent imports
-- `before_run` and `after_run` hooks
-- serialized `message_history`
-- generic `pending_actions`
-- OpenRouter `provider_order` and `provider_policy`
+## Canonical Patterns
 
-## Knowledge and domain expertise
+- [Brain Clone Pattern](./docs/brain-clone-pattern.md): how to build full domain
+  expert agents.
+- [Sachbearbeiter Pattern](./docs/reference-agents/sachbearbeiter-pattern.md):
+  production-proven reference architecture.
+- [Procurement Compliance Officer](./agents/procurement-compliance-officer):
+  full in-repo flagship example using Knowledge MCP, scoped per-run toolsets,
+  three outcomes, memory, approval, resume, `after_run`, mock mode, and evals.
 
-Knowledge is foundational, not optional. Domain experts rely on reference books, regulations, internal guides, and institutional memory — and so do their agent clones.
+## Demos
 
-- Knowledge MCP and R2R-backed search for professional knowledge bases
-- OCR / Docling for reading real-world documents
-- Langfuse prompt management and tracing
-- Promptfoo evaluation suites
-
-## Example agents
-
-- [`agents/example-agent`](./agents/example-agent)
-- [`agents/support-ticket`](./agents/support-ticket)
-- [`agents/code-review`](./agents/code-review)
-- [`agents/invoice`](./agents/invoice)
-- [`agents/rag-test`](./agents/rag-test)
-- [`agents/approval-demo`](./agents/approval-demo)
-- [`agents/resume-demo`](./agents/resume-demo)
-- [`agents/provider-policy-demo`](./agents/provider-policy-demo)
-- [`agents/scoped-tools-demo`](./agents/scoped-tools-demo)
+- [approval-demo](./agents/approval-demo): pending actions.
+- [resume-demo](./agents/resume-demo): message history.
+- [provider-policy-demo](./agents/provider-policy-demo): provider affinity.
+- [scoped-tools-demo](./agents/scoped-tools-demo): tool/collection scoping.
+- [example-agent](./agents/example-agent), [support-ticket](./agents/support-ticket),
+  [code-review](./agents/code-review), [invoice](./agents/invoice), and
+  [rag-test](./agents/rag-test): small reference demos.
 
 ## Docs
 
@@ -51,6 +49,7 @@ Knowledge is foundational, not optional. Domain experts rely on reference books,
 - [Architecture](./docs/architecture.md)
 - [Creating Agents](./docs/creating-agents.md)
 - [Capabilities](./docs/capabilities.md)
-- [Resume and Conversations](./docs/resume-conversations.md)
+- [Knowledge Management](./docs/knowledge-management.md)
 - [Approvals](./docs/approvals.md)
+- [Resume](./docs/resume-conversations.md)
 - [Provider Policy](./docs/provider-policy.md)

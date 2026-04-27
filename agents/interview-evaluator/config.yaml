@@ -1,0 +1,8 @@
+name: interview-evaluator
+description: "Evaluates interview transcripts against candidate and job context"
+model: openrouter/anthropic/claude-sonnet-4
+port: 8025
+timeout_seconds: 240
+max_retries: 3
+collections: []
+capabilities: []

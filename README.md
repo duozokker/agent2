@@ -49,7 +49,7 @@ Agent2 clones their entire workplace into an AI agent:
 ```
 What we clone                         How
 ─────────────────────────────────────────────────────────
-How the expert thinks                 Chain-of-Thought prompt
+How the expert thinks                 Sachbearbeiter Chain-of-Thought prompt
 What tools they use                   Tool integrations (DB, email, lookups)
 Which books they read                 Knowledge search (R2R collections)
 What they remember                    Persistent memory between sessions
@@ -66,6 +66,7 @@ The result is a production HTTP service — not a chatbot, not a prompt wrapper.
 
 | Feature | What it does | Demo agent | Docs |
 |---|---|---|---|
+| **Full Brain Clone pattern** | Expert workspace, books, memory, approvals, resume, evals | [procurement-compliance-officer](./agents/procurement-compliance-officer) | [Brain Clone Pattern](./docs/brain-clone-pattern.md) |
 | **Typed outputs** | Pydantic model as `output_type`, auto-retry on validation failure | [support-ticket](./agents/support-ticket) | [Creating Agents](./docs/creating-agents.md) |
 | **Sync + async execution** | `mode=sync` for inline, `mode=async` for queued work with polling | [invoice](./agents/invoice) | [Getting Started](./docs/getting-started.md) |
 | **Pause / resume** | Serialized `message_history` for multi-turn conversations | [resume-demo](./agents/resume-demo) | [Resume](./docs/resume-conversations.md) |
@@ -140,7 +141,7 @@ That's it. Your agent now has a production HTTP API with auth, rate limiting, st
 
 | Alternative | What it solves | What Agent2 adds |
 |---|---|---|
-| **"You are an expert" prompts** | A system prompt | The full expert: Chain-of-Thought prompt, tools, knowledge search, memory, human approval, typed output with validation |
+| **"You are an expert" prompts** | A system prompt | The full expert: Sachbearbeiter Chain-of-Thought prompt, tools, knowledge search, memory, human approval, typed output with validation |
 | **PydanticAI alone** | Agent loop, structured output, tool calls | The production runtime: HTTP API, auth, async queue, pause/resume, approvals, provider routing |
 | **LangChain / LangServe** | Prompt orchestration, chain composition | Task-centric execution (not conversation-centric), typed output enforcement, approval workflows |
 | **CrewAI / AutoGen** | Multi-agent coordination | Single-agent production deployment — one agent, one schema, one endpoint. Orchestrate multiple Agent2 services if you need multi-agent |
@@ -175,7 +176,7 @@ Agent2 stays close to the ecosystem instead of reinventing it:
 
 **Full** (`docker compose --profile full up -d`) — complete platform:
 - Everything above + R2R, Docling, Temporal, Knowledge MCP
-- rag-test, scoped-tools-demo
+- rag-test, scoped-tools-demo, procurement-compliance-officer
 
 ---
 
@@ -184,6 +185,8 @@ Agent2 stays close to the ecosystem instead of reinventing it:
 | Topic | Link |
 |---|---|
 | Architecture | [docs/architecture.md](./docs/architecture.md) |
+| Brain Clone Pattern | [docs/brain-clone-pattern.md](./docs/brain-clone-pattern.md) |
+| Sachbearbeiter Reference Pattern | [docs/reference-agents/sachbearbeiter-pattern.md](./docs/reference-agents/sachbearbeiter-pattern.md) |
 | Getting Started | [docs/getting-started.md](./docs/getting-started.md) |
 | Creating Agents | [docs/creating-agents.md](./docs/creating-agents.md) |
 | Capabilities | [docs/capabilities.md](./docs/capabilities.md) |
@@ -228,7 +231,7 @@ Skills follow the [open SKILL.md standard](https://agents.md/) and are available
 
 Agent2 provides production-tested primitives for turning domain expertise into AI agents — born from real enterprise work processing millions of documents for German tax firms.
 
-Current release: **v0.1.0** (pre-release, API stable for core features)
+Current release: **v0.2.0** (pre-release, API stable for core features)
 
 ### What's here
 

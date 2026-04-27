@@ -77,6 +77,10 @@ agent = create_agent(
 )
 ```
 
+For concurrent or request-scoped agents, create fresh `MCPServerStreamableHTTP`
+instances in `before_run()` and return them as `_toolsets`; Agent2 passes them to
+`Agent.run(toolsets=...)`.
+
 ### 5. Add Collections to Agent Config
 
 ```yaml
@@ -141,3 +145,4 @@ The host product manages which packages are active per tenant. The agent only se
 | Forgetting `--profile full` | Knowledge MCP needs R2R. Use `docker compose --profile full up -d` |
 | Not testing knowledge quality | Search for known answers. If retrieval is bad, improve chunking or add better source docs. |
 | Mixed-context documents | If a document covers multiple contexts (e.g. multiple standards), the agent may pick the wrong one. Use per-context documents or add clear prompt instructions. |
+| No canonical example | Study `agents/procurement-compliance-officer` for scoped Knowledge MCP plus books. |
