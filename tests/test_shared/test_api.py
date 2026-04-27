@@ -222,6 +222,55 @@ def test_tasks_sync_surfaces_before_run_failures_as_problem(auth_headers, monkey
         assert resp.json()["title"] == "Agent Precondition Failed"
 
 
+def test_tasks_sync_passes_before_run_toolsets_to_agent_run(auth_headers, monkeypatch):
+    """before_run may provide fresh per-run MCP toolsets without leaking them into the prompt."""
+    from shared.api import create_app
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+    toolsets = [object()]
+    captured: dict[str, object] = {}
+
+    class FakeOutput:
+        def model_dump(self, mode: str = "json") -> dict[str, object]:
+            return {"status": "complete"}
+
+    class FakeRunResult:
+        output = FakeOutput()
+
+        def all_messages(self) -> list:
+            return []
+
+    class FakeAgent:
+        async def run(self, input_str: str, **kwargs):
+            captured["input_str"] = input_str
+            captured["kwargs"] = kwargs
+            return FakeRunResult()
+
+    fake_module = types.ModuleType("agent.agent")
+    fake_module.agent = FakeAgent()  # type: ignore[attr-defined]
+    fake_module.before_run = MagicMock(  # type: ignore[attr-defined]
+        return_value={
+            "text": "hello world",
+            "_instructions": "Dynamic instructions",
+            "_toolsets": toolsets,
+        }
+    )
+    monkeypatch.setattr("importlib.import_module", lambda _path: fake_module)
+
+    app = create_app("example-agent")
+    with TestClient(app) as client:
+        resp = client.post(
+            "/tasks?mode=sync",
+            json={"input": {"text": "hello world"}},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+
+    assert captured["input_str"] == '{"text": "hello world"}'
+    assert captured["kwargs"]["instructions"] == "Dynamic instructions"  # type: ignore[index]
+    assert captured["kwargs"]["toolsets"] is toolsets  # type: ignore[index]
+
+
 def test_execute_pending_action_endpoint(auth_headers, monkeypatch):
     from shared.api import create_app
 

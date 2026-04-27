@@ -373,6 +373,130 @@ services:
     restart: unless-stopped
 
   # =============================================================================
+  # CULTURAL HYPE ANALYST
+  # =============================================================================
+  cultural-hype-analyst:
+    build:
+      context: .
+      dockerfile: agents/cultural-hype-analyst/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=cultural-hype-analyst
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+      - REDDIT_RO_USER_AGENT=${REDDIT_RO_USER_AGENT:-script:agent2-cultural-hype-analyst:v0.1.0}
+    ports:
+      - "8010:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # MARKET RESEARCH DESK
+  # =============================================================================
+  market-research-desk:
+    build:
+      context: .
+      dockerfile: agents/market-research-desk/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=market-research-desk
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+      - REDDIT_RO_USER_AGENT=${REDDIT_RO_USER_AGENT:-script:agent2-market-research-desk:v0.1.0}
+    ports:
+      - "8011:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # SCANDAL MARKET FINDER
+  # =============================================================================
+  scandal-market-finder:
+    build:
+      context: .
+      dockerfile: agents/scandal-market-finder/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=scandal-market-finder
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8012:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
+  # PROCUREMENT COMPLIANCE OFFICER (full brain-clone flagship)
+  # =============================================================================
+  procurement-compliance-officer:
+    build:
+      context: .
+      dockerfile: agents/procurement-compliance-officer/Dockerfile
+    profiles:
+      - full
+    depends_on:
+      redis:
+        condition: service_healthy
+      knowledge-mcp:
+        condition: service_healthy
+    environment:
+      - AGENT_NAME=procurement-compliance-officer
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - R2R_BASE_URL=http://r2r:7272
+      - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - REDIS_URL=redis://:${REDIS_AUTH:-myredissecret}@redis:6379
+      - API_BEARER_TOKEN=${API_BEARER_TOKEN:-dev-token-change-me}
+    ports:
+      - "8013:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # =============================================================================
   # INVOICE EXTRACTION AGENT
   # =============================================================================
   invoice:

@@ -1,0 +1,4 @@
+display_name: Scandal Market Agent Builder
+short_description: Build Agent2 agents for scandal-reactive Polymarket research.
+default_prompt: Build or update an Agent2 market agent that finds scandal-reactive Polymarket opportunities and produces structured watchlists.
+

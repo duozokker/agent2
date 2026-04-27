@@ -9,6 +9,10 @@ description: Use when creating a new Agent2 agent, scaffolding a service, or whe
 
 Scaffold a complete Agent2 agent service. One agent = one schema, one API, one Docker service.
 
+If the requested agent is a domain expert, regulated workflow, document reviewer,
+compliance worker, or professional brain clone, use `brain-clone` first and
+study `agents/procurement-compliance-officer`.
+
 ## When to Activate
 
 - User says "create agent", "new agent", "scaffold agent", "add agent"
@@ -39,6 +43,7 @@ Create all files in `agents/<name>/`:
 | `config.yaml` | name, description, model (empty = use DEFAULT_MODEL), port, timeout, collections |
 | `main.py` | `from shared.api import create_app; app = create_app("<name>")` |
 | `Dockerfile` | Copy from `agents/example-agent/Dockerfile`, change agent paths |
+| `tests/promptfoo/<name>/eval.yaml` | For domain agents, behavior-level evals |
 
 ### 3. Key Rules
 
@@ -84,3 +89,4 @@ curl -X POST http://localhost:<port>/tasks?mode=sync \
 | Hardcoding model name | Leave `model: ""` in config, use `DEFAULT_MODEL` env var |
 | Forgetting Dockerfile config copy | Must `mkdir -p agents/<name> && cp agent/config.yaml agents/<name>/config.yaml` |
 | Using `toolsets=None` | Use `toolsets=[]` (empty list is safe, None can cause issues) |
+| Building a domain expert from the tiny examples | Use `agents/procurement-compliance-officer` as the canonical full-pattern reference |

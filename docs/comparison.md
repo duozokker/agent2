@@ -60,7 +60,7 @@ from .schemas import DocumentSummary
 agent = create_agent(
     name="example-agent",
     output_type=DocumentSummary,
-    system_prompt="You are a document analysis assistant. ...",
+    instructions="You are a document analysis assistant. ...",
 )
 
 @agent.tool_plain

@@ -166,6 +166,10 @@ async def execute_action(action):
     return await registry.execute(action)
 ```
 
+For per-run MCP clients, `before_run()` can also return `_toolsets`; Agent2
+passes them to `Agent.run(toolsets=...)`. Study
+`agents/procurement-compliance-officer` for the combined pattern.
+
 ```yaml
 # config.yaml
 capabilities:

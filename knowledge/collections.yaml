@@ -10,3 +10,13 @@ collections:
       - example-agent
       - rag-test
       - scoped-tools-demo
+  procurement-policy-core:
+    description: "Example procurement policies, thresholds, sourcing rules, and approval guidance"
+    books_dir: books/procurement-policy-core/
+    agents:
+      - procurement-compliance-officer
+  procurement-vendor-risk:
+    description: "Example vendor risk, sanctions, privacy, and onboarding guidance"
+    books_dir: books/procurement-vendor-risk/
+    agents:
+      - procurement-compliance-officer

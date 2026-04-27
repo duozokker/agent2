@@ -1,22 +1,29 @@
 ---
 name: brain-clone
-description: Use when a domain expert wants to clone their professional brain into an Agent2 agent — interactive multi-phase interview that extracts identity, thinking process, tools, knowledge, examples, and output format, then generates a complete production agent with Chain-of-Thought prompt, Pydantic schemas, tools, knowledge collections, and Docker config. Triggers on "brain clone", "clone expert", "new domain agent", "extract expertise".
+description: Use when a domain expert wants to clone their professional brain into an Agent2 agent — interactive multi-phase interview that extracts identity, Chain-of-Thought, tools, knowledge, examples, and output format, then generates a complete production agent with a Sachbearbeiter-style Chain-of-Thought prompt, Pydantic schemas, tools, knowledge collections, and Docker config. Triggers on "brain clone", "clone expert", "new domain agent", "extract expertise".
 ---
 
 # Brain Clone
 
 ## Overview
 
-Turn a domain expert's brain into a production Agent2 agent through structured interview. The skill extracts tacit professional knowledge — not just facts, but HOW the expert thinks — and generates a complete agent following the proven Sachbearbeiter architecture: 5-layer Chain-of-Thought prompt, tool metaphors, knowledge collections, memory, sandbox tools, and structured output with outcome consistency validation.
+Turn a domain expert's brain into a production Agent2 agent through structured interview. The skill extracts tacit professional knowledge — not just facts, but the expert's Chain-of-Thought — and generates a complete agent following the proven Sachbearbeiter architecture: 5-layer Chain-of-Thought prompt, tool metaphors, knowledge collections, memory, sandbox tools, and structured output with outcome consistency validation.
 
-**Core insight**: Domain expertise is not a list of rules. It's a thinking process. This skill extracts the process, not the facts. Facts go into knowledge books. Thinking goes into the prompt.
+Canonical references in this repo:
+- `docs/brain-clone-pattern.md` explains the Agent2 Brain Clone pattern.
+- `docs/reference-agents/sachbearbeiter-pattern.md` explains the production reference architecture.
+- `agents/procurement-compliance-officer` is the full public flagship example to study before generating a serious domain agent.
+
+**Core insight**: Domain expertise is not a list of rules. It is a Sachbearbeiter-style Chain-of-Thought: a professional mental loop of intake, lookup, checking, clarification, decision, and memory update. Facts go into knowledge books. The expert's Chain-of-Thought goes into the prompt.
+
+**Important**: In Agent2, "Chain-of-Thought" means the domain professional's explicit work-thinking pattern, not a request to expose private model internals. The prompt should make the agent run the expert's mental chain; the output should expose concise `reasoning` and `review_steps[]` as the observable trace of that work.
 
 ## When to Use
 
 - Domain expert wants to "clone" their professional decision-making into an AI agent
 - User says "brain clone", "clone my brain", "create domain expert", "extract my expertise"
 - Building an agent for a regulated/specialized domain (accounting, legal, medical, compliance, procurement, HR, insurance)
-- Need to go beyond simple "You are an expert in X" prompts to Sachbearbeiter-level Chain-of-Thought
+- Need to go beyond simple "You are an expert in X" prompts to Sachbearbeiter-level Chain-of-Thought prompts
 
 **Do NOT use for**: Generic chatbots, simple CRUD agents, or agents that don't need domain expertise. Use `creating-agents` skill instead.
 
@@ -38,7 +45,7 @@ Layer 2: WORKSPACE (Tool Metaphors)
   - Notepad → update_{context}_memory()
   → Every tool gets a HUMAN metaphor the LLM understands
 
-Layer 3: CHAIN OF THOUGHT (Thinking Process)
+Layer 3: SACHBEARBEITER CHAIN OF THOUGHT
   "When you process a [case], you work through it step by step:"
   - "What do I have here?" (intake/classification)
   - "What do I know about this context?" (context lookup)
@@ -46,11 +53,11 @@ Layer 3: CHAIN OF THOUGHT (Thinking Process)
   - "Is anything unclear?" (clarification check)
   - "How do I process this?" (core domain logic)
   - "What did I learn?" (memory update)
-  → Steps extracted from the expert's actual thinking process
+  → The professional reasoning chain extracted from the expert's actual work
 
-Layer 4: EXAMPLE THOUGHT PROCESSES
+Layer 4: EXAMPLE CHAINS OF THOUGHT
   3-5 real cases showing different outcomes and edge cases
-  → NOT rules, but demonstrations of HOW TO THINK
+  → NOT rules, but demonstrations of the expert's thinking chain
 
 Layer 5: THREE OUTCOMES (Decision Tree)
   Every case ends with exactly one of three results:
@@ -80,7 +87,7 @@ Ask:
 
 ### Phase 2: Thinking Process
 
-**Goal**: Extract the expert's ACTUAL step-by-step reasoning when they handle a case.
+**Goal**: Extract the expert's ACTUAL Chain-of-Thought when they handle a case.
 
 Ask:
 - "When a new [case/document/request] lands on your desk, what are your FIRST 3 thoughts?"
@@ -90,7 +97,7 @@ Ask:
 - "When do you ask someone else for input? What triggers that?"
 - "When do you reject something outright? What makes something unworkable?"
 
-**Extract**: Ordered list of thinking steps with decision points. This becomes Layer 3.
+**Extract**: Ordered Chain-of-Thought with decision points. This becomes Layer 3.
 
 **Critical**: Do NOT accept vague answers like "I analyze it". Push for specifics: "What exactly do you check first? Then what?"
 
@@ -174,7 +181,7 @@ Ask:
 3. What the outcome was and why
 4. What made this case different from others
 
-**Map to Layer 4**: Write each as a brief thought-process narrative (not a rule, but a demonstration of thinking). Keep them short — 2-3 sentences each, like the Sachbearbeiter examples.
+**Map to Layer 4**: Write each as a brief Chain-of-Thought narrative (not a rule, but a demonstration of thinking). Keep them short — 2-3 sentences each, like the Sachbearbeiter examples.
 
 ### Phase 6: Output Format
 
@@ -208,7 +215,7 @@ class {Name}Result(BaseModel):
     # Always present
     extracted_fields: Extracted{Domain}Fields
     confidence: float = Field(ge=0.0, le=1.0)
-    reasoning: str  # The expert's chain of thought for THIS case
+    reasoning: str  # Concise observable Chain-of-Thought summary for THIS case
     review_steps: list[str] = Field(default_factory=list)
     pending_actions: list[PendingAction] = Field(default_factory=list)
 
@@ -237,6 +244,7 @@ Generate these files in `agents/{name}/`:
 - `before_run()`: collection scoping, context injection into prompt, resume handling
 - `after_run()`: persistence, low-confidence escalation
 - `mock_result()`: schema-compliant mock for each outcome
+- Tests and Promptfoo evals that prove behavior, not just JSON shape
 
 **3. `tools.py`** — Tool implementations:
 - Knowledge: via MCP toolsets (not in tools.py)
@@ -274,7 +282,7 @@ capabilities:
 
 Present the generated system prompt to the expert and ask:
 - "Read this carefully. Does this sound like how YOU think?"
-- "Is any step missing from the thinking process?"
+- "Is any step missing from the Chain-of-Thought?"
 - "Are the example cases accurate?"
 - "Would you trust this agent to handle a real case?"
 - "What would a beginner get wrong that I should add as a warning?"
@@ -303,14 +311,15 @@ You sit at your desk and have everything you need:
 
 Use these tools naturally — reach for them when you need them, not mechanically.
 
-## How You Think
+## Sachbearbeiter Chain of Thought
 
-When you process a {case_type}, you work through it step by step. Document your \
-process in review_steps[] and explain your decisions in reasoning.
+When you process a {case_type}, run the expert Chain-of-Thought step by step. \
+Document the visible checkpoints in review_steps[] and summarize the decision \
+chain in reasoning.
 
 {layer_3_chain_of_thought_steps}
 
-## Example Thought Processes
+## Example Chains of Thought
 
 These are typical cases. Your reality is much broader — use these as orientation, \
 not as templates.
@@ -378,6 +387,29 @@ async def update_{context}_memory(context_id: str, memory: str) -> dict:
     Read existing memory first, merge, then save. Max 10,000 chars."""
 ```
 
+### Chain-of-Thought Checkpoint Tool
+
+For complex expert agents, add a no-op checkpoint tool that makes the model walk
+the Sachbearbeiter Chain-of-Thought before deciding. This tool does not persist
+anything and does not expose private model internals; it records the visible case
+checkpoint the professional would write on their scratchpad.
+
+```python
+@agent.tool_plain
+async def note_review_step(step: str, finding: str, next_action: str = "") -> dict:
+    """Record a visible checkpoint in the expert Chain-of-Thought."""
+    return {
+        "recorded": True,
+        "step": step,
+        "finding": finding,
+        "next_action": next_action,
+    }
+```
+
+Use this when the real expert would pause and think: classify the case, choose a
+book to open, decide whether facts are missing, or decide between completion,
+clarification, and rejection.
+
 ### Knowledge Scoping
 
 Per-tenant or per-context knowledge collections:
@@ -406,7 +438,7 @@ Every brain-clone agent uses `before_run()` for:
 3. **Langfuse prompt fallback** — try Langfuse prompt management first (editable without redeploy), fall back to local SYSTEM_PROMPT
 4. **Resume detection** — check for `message_history` and adjust instructions
 5. **Input guards** — validate prerequisites (like OCR availability)
-6. **Per-run MCP toolsets** — create fresh `MCPServerStreamableHTTP` instances per run to avoid cancel scope collisions when multiple async tasks run concurrently
+6. **Per-run MCP toolsets** — create fresh `MCPServerStreamableHTTP` instances per run to avoid cancel scope collisions when multiple async tasks run concurrently. Agent2 passes `_toolsets` into `Agent.run(toolsets=...)`.
 
 ```python
 def before_run(input_data: dict) -> dict:
@@ -467,7 +499,7 @@ async def after_run(input_data: dict, output: dict) -> None:
 
 | Mistake | Fix |
 |---|---|
-| Skipping Phase 2 (thinking process) | This IS the skill. Without it you get "You are an expert" — worthless. Push for step-by-step specifics. |
+| Skipping Phase 2 (Chain-of-Thought) | This IS the skill. Without it you get "You are an expert" — worthless. Push for step-by-step specifics. |
 | Encoding domain knowledge in the prompt | Knowledge goes in R2R collections. The prompt teaches HOW TO THINK, not WHAT TO KNOW. |
 | Generic tool names | Use domain language: "lookup_lieferant" not "search_entity". The LLM performs better with domain-specific naming. |
 | Skipping the review loop (Phase 8) | The expert MUST validate. "Does this sound like how you think?" is the only real test. |
@@ -476,6 +508,7 @@ async def after_run(input_data: dict, output: dict) -> None:
 | No model_validator on schema | Without it, the LLM can return contradictory state (e.g., complete + rejection_reason). PydanticAI retries on validation errors. |
 | Hardcoding prompt without before_run | Dynamic sections (like context-specific rules) must be injected per-run via `_instructions`. |
 | Forgetting mock_result | Without it, the API is untestable in dev mode. Generate schema-compliant mocks for each outcome. |
+| Ignoring the flagship example | Study `agents/procurement-compliance-officer` before generating a full domain expert. |
 
 ## Cross-References
 

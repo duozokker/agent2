@@ -347,7 +347,7 @@ def create_app(agent_name: str) -> FastAPI:
     app = FastAPI(
         title=f"Agent2: {agent_name}",
         description=config.description or f"API for the {agent_name} agent",
-        version="0.1.0",
+        version="0.2.0",
         lifespan=_make_lifespan(agent_name),
     )
 
@@ -565,6 +565,21 @@ async def _load_and_run_agent(
                 detail=str(exc),
             ) from exc
 
+    run_instructions = None
+    run_toolsets = None
+    if callable(before_run):
+        run_instructions = input_data.pop("_instructions", None)
+        run_toolsets = input_data.pop("_toolsets", None)
+    else:
+        input_data.pop("_instructions", None)
+        input_data.pop("_toolsets", None)
+
+    # Runtime control fields should guide the run, not appear in the user prompt.
+    input_data.pop("message_history", None)
+    hook_input = dict(input_data)
+    if raw_history is not None:
+        hook_input["message_history"] = raw_history
+
     # -- Mock mode when no LLM key is present --------------------------------
     if not settings.has_llm_key:
         logger.info("No OPENROUTER_API_KEY set; returning mock result")
@@ -585,17 +600,15 @@ async def _load_and_run_agent(
             "(a PydanticAI Agent instance).",
         )
 
-    run_instructions = None
-    if callable(before_run):
-        run_instructions = input_data.pop("_instructions", None)
-    else:
-        input_data.pop("_instructions", None)
-
     input_str = json.dumps(input_data)
     try:
         run_kwargs: dict[str, Any] = {"message_history": message_history}
         if run_instructions is not None:
             run_kwargs["instructions"] = run_instructions
+        if run_toolsets is not None:
+            if not isinstance(run_toolsets, (list, tuple)):
+                raise TypeError("_toolsets must be a list or tuple of PydanticAI toolsets")
+            run_kwargs["toolsets"] = run_toolsets
         result = await agent_obj.run(input_str, **run_kwargs)
     except Exception as exc:
         if _is_provider_auth_error(exc):

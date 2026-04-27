@@ -1,0 +1,10 @@
+name: market-research-desk
+description: "Coordinates social scouting, market matching, thesis review, and paper-trade planning"
+model: ""
+port: 8011
+timeout_seconds: 240
+max_retries: 3
+collections: []
+capabilities:
+  - resume
+  - approval_workflow

@@ -18,6 +18,9 @@ docker compose up -d example-agent
 # Run eval for example agent
 npx promptfoo eval -c tests/promptfoo/example-agent/eval.yaml
 
+# Run eval for the full Brain Clone flagship agent
+npx promptfoo eval -c tests/promptfoo/procurement-compliance-officer/eval.yaml
+
 # View results
 npx promptfoo view
 
@@ -34,6 +37,9 @@ tests/promptfoo/
   example-agent/
     eval.yaml        # Eval config for the example summarisation agent
     dataset.json     # Reusable test inputs
+  procurement-compliance-officer/
+    eval.yaml        # Eval config for the full Brain Clone flagship agent
+    dataset.json     # Reusable purchase-request inputs
 ```
 
 ## Writing New Evals
