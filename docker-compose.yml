@@ -293,7 +293,7 @@ services:
     environment:
       - AGENT_NAME=example-agent
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - R2R_BASE_URL=http://r2r:7272
       - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
       - LANGFUSE_HOST=http://langfuse-web:3000
@@ -327,7 +327,7 @@ services:
     environment:
       - AGENT_NAME=support-ticket
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -356,7 +356,7 @@ services:
     environment:
       - AGENT_NAME=code-review
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -385,7 +385,7 @@ services:
     environment:
       - AGENT_NAME=cultural-hype-analyst
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -415,7 +415,7 @@ services:
     environment:
       - AGENT_NAME=market-research-desk
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -445,7 +445,7 @@ services:
     environment:
       - AGENT_NAME=scandal-market-finder
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -478,7 +478,7 @@ services:
     environment:
       - AGENT_NAME=procurement-compliance-officer
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - R2R_BASE_URL=http://r2r:7272
       - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
       - LANGFUSE_HOST=http://langfuse-web:3000
@@ -509,7 +509,7 @@ services:
     environment:
       - AGENT_NAME=invoice
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -542,7 +542,7 @@ services:
     environment:
       - AGENT_NAME=rag-test
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - R2R_BASE_URL=http://r2r:7272
       - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
       - LANGFUSE_HOST=http://langfuse-web:3000
@@ -576,7 +576,7 @@ services:
     environment:
       - AGENT_NAME=approval-demo
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -605,7 +605,7 @@ services:
     environment:
       - AGENT_NAME=resume-demo
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -634,7 +634,7 @@ services:
     environment:
       - AGENT_NAME=provider-policy-demo
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
@@ -667,7 +667,7 @@ services:
     environment:
       - AGENT_NAME=scoped-tools-demo
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-openrouter/anthropic/claude-sonnet-4}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-}
       - R2R_BASE_URL=http://r2r:7272
       - KNOWLEDGE_MCP_URL=http://knowledge-mcp:9090/mcp
       - LANGFUSE_HOST=http://langfuse-web:3000

@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir \
     "pyyaml>=6.0" \
     "langfuse>=2.0"
 
+COPY agent2.yaml ./agent2.yaml
 COPY shared/ ./shared/
 COPY agents/resume-demo/ ./agent/
 RUN mkdir -p agents/resume-demo && cp agent/config.yaml agents/resume-demo/config.yaml

@@ -14,6 +14,11 @@ Read [`llms.txt`](./llms.txt) for the compact map and
 uv sync --extra dev
 uv run pytest tests/ -v
 
+# Agent2 v0.3 CLI
+uv run agent2 setup --dry-run
+uv run agent2 onboard --from-spec tests/fixtures/roofing-agent-spec.json --no-llm --overwrite
+uv run agent2 doctor --json
+
 # Core stack
 docker compose up -d
 
@@ -40,8 +45,12 @@ docker compose --profile full up -d
 
 - `shared/` is framework code.
 - Agent business logic lives in `agents/<name>/`.
+- `agent2.yaml` is the global source of truth for default model, provider
+  policy, stack profile, telemetry, and framework ports.
 - Build agents with `create_agent()` from [`shared/runtime.py`](./shared/runtime.py).
 - Build apps with `create_app()` from [`shared/api.py`](./shared/api.py).
+- Use `agent2 setup` for local `.env`/`agent2.yaml` generation and `agent2
+  onboard` for Brain Clone agent scaffolding before hand-editing files.
 - Use `instructions=`, not `system_prompt=`, for new code.
 - `system_prompt=` exists only as a compatibility alias.
 - Use `toolsets=[]` when no MCP tools are attached.
@@ -49,6 +58,8 @@ docker compose --profile full up -d
   collections, resume hints, input guards, and per-run `_toolsets`.
 - Per-run `_toolsets` from `before_run()` are supported by the API runtime and
   passed to `Agent.run(toolsets=...)`; they are stripped from the user prompt.
+- Model resolution order is explicit runtime argument, agent `config.yaml`,
+  `agent2.yaml`, then env fallback.
 - Errors must be RFC 7807 `application/problem+json`.
 
 ## Canonical examples

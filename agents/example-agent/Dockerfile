@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir \
     "langfuse>=2.0"
 
 # Copy shared framework
+COPY agent2.yaml ./agent2.yaml
 COPY shared/ ./shared/
 
 # Copy agent code as the "agent" Python package

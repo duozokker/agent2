@@ -1,0 +1,11 @@
+default_model: ~anthropic/claude-sonnet-latest
+provider_order:
+  - anthropic
+provider_policy:
+  allow_fallbacks: false
+stack_profile: core
+telemetry:
+  enabled: false
+ports:
+  agent_start: 8014
+  setup_ui: 8787

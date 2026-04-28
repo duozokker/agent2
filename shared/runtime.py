@@ -4,7 +4,7 @@ Agent creation -- the core of the framework.
 :func:`create_agent` builds a fully-configured :class:`pydantic_ai.Agent`
 with:
 
-* Model resolution  (parameter > config.yaml > env ``DEFAULT_MODEL``)
+* Model resolution  (parameter > config.yaml > agent2.yaml > env ``DEFAULT_MODEL``)
 * System prompt resolution  (parameter > Langfuse prompt > fallback)
 * OpenTelemetry / Langfuse instrumentation (when keys are present)
 
@@ -53,6 +53,7 @@ def _normalize_model_id(model_id: str) -> str:
     Examples::
 
         openrouter/anthropic/claude-sonnet-4  ->  openrouter:anthropic/claude-sonnet-4
+        ~anthropic/claude-sonnet-latest       ->  openrouter:~anthropic/claude-sonnet-latest
         openai:gpt-4o                         ->  openai:gpt-4o  (already correct)
         test                                  ->  test           (no change)
     """
@@ -64,6 +65,9 @@ def _normalize_model_id(model_id: str) -> str:
         slash_prefix = prefix + "/"
         if model_id.startswith(slash_prefix):
             return prefix + ":" + model_id[len(slash_prefix):]
+
+    if model_id.startswith("~"):
+        return f"openrouter:{model_id}"
 
     return model_id
 
@@ -165,7 +169,7 @@ def create_agent(
         A Pydantic model class that describes the structured output.
     model:
         LLM model identifier.  Falls back to ``config.yaml``'s ``model``
-        field, then to the ``DEFAULT_MODEL`` env var.
+        field, then to ``agent2.yaml``, then to the ``DEFAULT_MODEL`` env var.
     instructions:
         Explicit instructions string. When omitted the framework will try
         Langfuse (using *prompt_name*) and finally fall back to a generic
@@ -230,7 +234,13 @@ def create_agent(
     # -- Instrumentation -----------------------------------------------------
     _setup_instrumentation(settings)
 
-    provider_policy = _openrouter_provider_policy(config, resolved_model)
+    policy_config = AgentConfig(
+        name=config.name,
+        model=config.model,
+        provider_order=config.provider_order or list(settings.provider_order),
+        provider_policy=config.provider_policy or dict(settings.provider_policy),
+    )
+    provider_policy = _openrouter_provider_policy(policy_config, resolved_model)
 
     # -- Build the model object ------------------------------------------------
     model_obj = _build_model(resolved_model, settings)

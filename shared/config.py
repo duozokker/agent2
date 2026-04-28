@@ -3,8 +3,9 @@ Configuration management for Agent2.
 
 Two levels of configuration:
 
-1. **AgentConfig** -- per-agent settings loaded from ``agents/<name>/config.yaml``.
-2. **Settings** -- global / environment-level settings populated from env vars.
+1. **FrameworkConfig** -- project-level settings loaded from ``agent2.yaml``.
+2. **AgentConfig** -- per-agent settings loaded from ``agents/<name>/config.yaml``.
+3. **Settings** -- runtime settings populated from project config and env vars.
 
 Both are *frozen* dataclasses so they are safely shareable across async tasks.
 """
@@ -25,6 +26,7 @@ import yaml
 
 _PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
 _TOKEN_SPLIT_RE = re.compile(r"[\s,;]+")
+_DEFAULT_MODEL = "~anthropic/claude-sonnet-latest"
 
 
 def _project_root() -> Path:
@@ -35,6 +37,65 @@ def _project_root() -> Path:
     the ``shared/`` package directory.
     """
     return _PROJECT_ROOT
+
+
+# ---------------------------------------------------------------------------
+# Framework config
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class FrameworkConfig:
+    """Project-level Agent2 configuration loaded from ``agent2.yaml``."""
+
+    default_model: str = ""
+    provider_order: list[str] = field(default_factory=list)
+    provider_policy: dict[str, Any] = field(default_factory=dict)
+    stack_profile: str = "core"
+    telemetry: dict[str, Any] = field(default_factory=lambda: {"enabled": False})
+    ports: dict[str, int] = field(default_factory=lambda: {"agent_start": 8014, "setup_ui": 8787})
+    extra: dict[str, Any] = field(default_factory=dict, repr=False)
+
+
+def load_framework_config(path: Path | None = None) -> FrameworkConfig:
+    """Load project-level configuration from ``agent2.yaml``.
+
+    Missing files are valid; env vars remain the fallback for existing installs.
+    """
+
+    config_path = path or (_project_root() / "agent2.yaml")
+    if not config_path.exists():
+        return FrameworkConfig()
+
+    with open(config_path, "r", encoding="utf-8") as fh:
+        raw: dict[str, Any] = yaml.safe_load(fh) or {}
+
+    known_fields = {
+        "default_model",
+        "provider_order",
+        "provider_policy",
+        "stack_profile",
+        "telemetry",
+        "ports",
+    }
+    known: dict[str, Any] = {}
+    extra: dict[str, Any] = {}
+
+    for key, value in raw.items():
+        if key in known_fields:
+            known[key] = value
+        else:
+            extra[key] = value
+
+    if known.get("provider_order") is None:
+        known["provider_order"] = []
+    if known.get("provider_policy") is None:
+        known["provider_policy"] = {}
+    if known.get("telemetry") is None:
+        known["telemetry"] = {"enabled": False}
+    if known.get("ports") is None:
+        known["ports"] = {"agent_start": 8014, "setup_ui": 8787}
+
+    return FrameworkConfig(**known, extra=extra)
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +260,11 @@ class Settings:
 
     # -- LLM -----------------------------------------------------------------
     openrouter_api_key: str = ""
-    default_model: str = "openrouter/anthropic/claude-sonnet-4"
+    default_model: str = _DEFAULT_MODEL
+    provider_order: tuple[str, ...] = ()
+    provider_policy: dict[str, Any] = field(default_factory=dict)
+    stack_profile: str = "core"
+    telemetry_enabled: bool = False
 
     # -- R2R ------------------------------------------------------------------
     r2r_base_url: str = "http://localhost:7272"
@@ -232,16 +297,25 @@ class Settings:
     def from_env(cls) -> Settings:
         """Build a ``Settings`` instance from the current environment."""
 
+        framework = load_framework_config()
         tokens_raw = os.environ.get("API_BEARER_TOKENS")
         if tokens_raw is None:
             tokens_raw = os.environ.get("API_BEARER_TOKEN", "dev-token-change-me")
         tokens = _parse_bearer_tokens(tokens_raw) or ("dev-token-change-me",)
+        telemetry_enabled = bool((framework.telemetry or {}).get("enabled", False))
+        telemetry_env = os.environ.get("AGENT2_TELEMETRY_ENABLED")
+        if telemetry_env is not None:
+            telemetry_enabled = telemetry_env.strip().lower() in {"1", "true", "yes", "on"}
+
+        env_default_model = os.environ.get("DEFAULT_MODEL") or _DEFAULT_MODEL
 
         return cls(
             openrouter_api_key=os.environ.get("OPENROUTER_API_KEY", ""),
-            default_model=os.environ.get(
-                "DEFAULT_MODEL", "openrouter/anthropic/claude-sonnet-4"
-            ),
+            default_model=framework.default_model or env_default_model,
+            provider_order=tuple(framework.provider_order),
+            provider_policy=dict(framework.provider_policy),
+            stack_profile=os.environ.get("AGENT2_STACK_PROFILE", framework.stack_profile or "core"),
+            telemetry_enabled=telemetry_enabled,
             r2r_base_url=os.environ.get("R2R_BASE_URL", "http://localhost:7272"),
             langfuse_host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
             langfuse_public_key=os.environ.get("LANGFUSE_PUBLIC_KEY", ""),

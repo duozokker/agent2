@@ -8,6 +8,17 @@ Agent2 is built on PydanticAI and FastAPI. Open this repo in Claude Code, Codex,
 Cursor, Gemini CLI, or another coding agent and use `/brain-clone` for serious
 domain agents.
 
+v0.3 adds a first-class CLI onboarding path:
+
+- `agent2 setup`: write `.env` and `agent2.yaml`, select model/profile/telemetry.
+- `agent2 onboard`: run the Brain Clone harness and generate an Agent2 agent.
+- `agent2 doctor`: validate Docker, uv, config, ports, compose, health.
+- `agent2 list`, `agent2 run <agent>`, `agent2 serve <agent>`, and
+  `agent2 publish-check`: operate local agents.
+
+Model resolution is explicit runtime argument > agent `config.yaml` >
+`agent2.yaml` > env fallback. Normal agents should leave `model: ""`.
+
 The most important distinction: prompts teach the expert's Sachbearbeiter Chain-of-Thought; knowledge
 books contain what the expert knows. Do not replace the knowledge layer with
 hardcoded lookup tables.
@@ -20,6 +31,9 @@ hardcoded lookup tables.
 - [shared/runtime.py](./shared/runtime.py): `create_agent()` and model setup.
 - [shared/api.py](./shared/api.py): `create_app()`, task API, hooks, resume,
   per-run toolsets, and approval endpoint.
+- [agent2_cli/](./agent2_cli): Typer/Rich/Textual-ready onboarding CLI,
+  setup wizard, doctor, deterministic Brain Clone generator.
+- [agent2.yaml](./agent2.yaml): global framework configuration.
 - [knowledge/collections.yaml](./knowledge/collections.yaml): knowledge
   collection catalog.
 
@@ -47,6 +61,7 @@ hardcoded lookup tables.
 
 - [README](./README.md)
 - [Architecture](./docs/architecture.md)
+- [CLI Onboarding](./docs/cli-onboarding.md)
 - [Creating Agents](./docs/creating-agents.md)
 - [Capabilities](./docs/capabilities.md)
 - [Knowledge Management](./docs/knowledge-management.md)

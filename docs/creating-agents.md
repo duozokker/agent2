@@ -1,8 +1,28 @@
 # Creating Agents
 
-## Recommended: use `/brain-clone`
+## Recommended: use `agent2 onboard`
 
-The fastest way to create a domain expert agent is the `/brain-clone` skill in Claude Code. It runs an interactive interview to extract the expert's identity, knowledge sources, decision patterns, and tools, then scaffolds the complete agent -- schema, instructions, config, tools, and Docker wiring.
+The fastest way to create a domain expert agent is the Agent2 onboarding harness:
+
+```bash
+uv run agent2 setup
+uv run agent2 onboard
+```
+
+It runs a Brain Clone interview to extract the expert's identity, knowledge
+sources, decision patterns, tools, examples, and output contract. The LLM may
+help synthesize the interview into an `AgentSpec`, but deterministic templates
+write the files: schema, instructions, config, tools, tests, Promptfoo starter,
+and Docker wiring.
+
+For non-interactive generation:
+
+```bash
+uv run agent2 onboard --from-spec tests/fixtures/roofing-agent-spec.json --no-llm
+```
+
+The `/brain-clone` skill in Claude Code, Codex, Cursor, or another coding agent
+is still the recommended way to refine the generated agent after onboarding.
 
 For agents that need deep domain expertise (reading documents, checking regulations, asking clarifying questions), also see the `/building-domain-experts` skill.
 
@@ -32,10 +52,14 @@ class InvoiceSummary(BaseModel):
 
 ## 3. Configure the agent
 
+Use `model: ""` for normal agents. The framework resolves the model from
+explicit runtime argument, then agent config, then `agent2.yaml`, then
+`DEFAULT_MODEL`/built-in fallback.
+
 ```yaml
 name: my-agent
 description: "Summarizes invoices into typed accounting data"
-model: openrouter/anthropic/claude-sonnet-4
+model: ""
 timeout_seconds: 120
 max_retries: 3
 collections: []

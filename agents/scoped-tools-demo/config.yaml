@@ -1,6 +1,6 @@
 name: scoped-tools-demo
 description: "Framework demo for scoped MCP tool policies"
-model: openrouter/anthropic/claude-sonnet-4
+model: ""
 port: 8007
 timeout_seconds: 120
 max_retries: 3

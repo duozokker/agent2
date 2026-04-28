@@ -1,6 +1,6 @@
 name: my-agent
 description: "Describe the business job of your agent"
-model: openrouter/anthropic/claude-sonnet-4
+model: ""
 port: 8000
 timeout_seconds: 120
 max_retries: 3

@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir \
     "pyyaml>=6.0" \
     "langfuse>=2.0"
 
+COPY agent2.yaml ./agent2.yaml
 COPY shared/ ./shared/
 COPY agents/scoped-tools-demo/ ./agent/
 RUN mkdir -p agents/scoped-tools-demo && cp agent/config.yaml agents/scoped-tools-demo/config.yaml
