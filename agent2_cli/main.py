@@ -16,6 +16,7 @@ from rich.console import Console
 from rich.table import Table
 
 from agent2_cli.doctor import run_doctor
+from agent2_cli.generator import GenerationError
 from agent2_cli.onboarding import run_onboarding, textual_available
 from agent2_cli.setup import DEFAULT_MODEL, MODEL_CHOICES, SetupOptions, payload_as_json, run_setup
 from shared.config import load_agent_config, load_framework_config
@@ -84,14 +85,17 @@ def onboard(
     """Run the Brain Clone onboarding harness."""
 
     use_tui = from_spec is None and not no_tui and textual_available()
-    run_onboarding(
-        project_root=_root(),
-        from_spec=from_spec,
-        no_llm=no_llm,
-        overwrite=overwrite,
-        use_tui=use_tui,
-        console=console,
-    )
+    try:
+        run_onboarding(
+            project_root=_root(),
+            from_spec=from_spec,
+            no_llm=no_llm,
+            overwrite=overwrite,
+            use_tui=use_tui,
+            console=console,
+        )
+    except GenerationError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @app.command()
@@ -138,6 +142,7 @@ def run(
 ) -> None:
     """Send a sync test request to a local agent."""
 
+    _ensure_agent_exists(agent)
     config = load_agent_config(agent)
     url = f"http://localhost:{config.port}/tasks?mode=sync"
     body = json.dumps({"input": {"text": text}}).encode()
@@ -165,6 +170,7 @@ def serve(
     import uvicorn
     from shared.api import create_app
 
+    _ensure_agent_exists(agent)
     config = load_agent_config(agent)
     uvicorn.run(create_app(agent), host=host, port=port or config.port)
 
@@ -190,6 +196,12 @@ def publish_check() -> None:
         raise typer.Exit(1)
     config = load_framework_config(_root() / "agent2.yaml")
     console.print(f"[bold green]publish-check passed[/bold green] default_model={config.default_model or '<env>'}")
+
+
+def _ensure_agent_exists(agent: str) -> None:
+    config_path = _root() / "agents" / agent / "config.yaml"
+    if not config_path.exists():
+        raise typer.BadParameter(f"Unknown agent '{agent}'. Expected {config_path}.")
 
 
 if __name__ == "__main__":
