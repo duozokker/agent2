@@ -34,6 +34,125 @@ def _root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+_MODEL_LABELS = {
+    "~anthropic/claude-sonnet-latest": "Claude Sonnet (recommended)",
+    "~openai/gpt-latest": "GPT Latest",
+    "~moonshotai/kimi-latest": "Kimi Latest",
+    "~openai/gpt-mini-latest": "GPT Mini (fast, affordable)",
+    "~anthropic/claude-opus-latest": "Claude Opus (highest quality)",
+}
+
+
+def _setup_wizard(
+    openrouter_key: str | None, model: str, profile: str, no_docker: bool, no_onboard: bool,
+) -> tuple[SetupOptions, bool]:
+    """Run the step-by-step setup wizard using questionary prompts."""
+
+    import questionary
+    from questionary import Style
+
+    style = Style([
+        ("qmark", "fg:#FF3B30 bold"),
+        ("question", "fg:#ffffff bold"),
+        ("answer", "fg:#FF3B30 bold"),
+        ("pointer", "fg:#FF3B30 bold"),
+        ("highlighted", "fg:#FF3B30 bold"),
+        ("selected", "fg:#FF3B30"),
+        ("instruction", "fg:#9A9590"),
+        ("text", "fg:#9A9590"),
+        ("separator", "fg:#333333"),
+    ])
+
+    console.print()
+    console.print("[bold #FF3B30]  ●[/bold #FF3B30]  [bold]Agent2 Setup[/bold]")
+    console.print("[#9A9590]  Configure your agent framework in 30 seconds.[/]")
+    console.print()
+
+    console.print("[bold #FF3B30][1/4][/] [bold]OpenRouter API key[/]")
+    console.print("[#777]  Get yours at openrouter.ai/keys[/]")
+    key = openrouter_key or questionary.password(
+        "  API key:", style=style,
+    ).ask()
+    if key is None:
+        raise KeyboardInterrupt
+    key = key.strip()
+    if key:
+        console.print(f"  [green]✓[/green] Key set ({key[:12]}...)")
+    else:
+        console.print("  [#777]· Skipped (mock mode)[/]")
+    console.print()
+
+    console.print("[bold #FF3B30][2/4][/] [bold]Default model[/]")
+    model_choices = [
+        questionary.Choice(title=_MODEL_LABELS.get(m, m), value=m)
+        for m in MODEL_CHOICES
+    ]
+    model_choices.append(questionary.Choice(title="Custom model ID...", value="__custom__"))
+    selected_model = questionary.select(
+        "  Select model:", choices=model_choices, default=model, style=style,
+    ).ask()
+    if selected_model is None:
+        raise KeyboardInterrupt
+    if selected_model == "__custom__":
+        selected_model = questionary.text("  Custom model ID:", style=style).ask()
+        if not selected_model:
+            selected_model = model
+    console.print(f"  [green]✓[/green] {selected_model}")
+    console.print()
+
+    console.print("[bold #FF3B30][3/4][/] [bold]Stack profile[/]")
+    selected_profile = questionary.select(
+        "  Select profile:",
+        choices=[
+            questionary.Choice(title="core — fast local agent API (recommended)", value="core"),
+            questionary.Choice(title="full — adds RAG, Knowledge MCP, Langfuse, Temporal", value="full"),
+        ],
+        default=profile,
+        style=style,
+    ).ask()
+    if selected_profile is None:
+        raise KeyboardInterrupt
+    console.print(f"  [green]✓[/green] {selected_profile}")
+    console.print()
+
+    start_docker = False
+    if not no_docker:
+        console.print("[bold #FF3B30][4/4][/] [bold]Docker services[/]")
+        start_docker = questionary.confirm(
+            "  Start Docker services now?", default=True, style=style,
+        ).ask()
+        if start_docker is None:
+            raise KeyboardInterrupt
+        console.print(f"  [green]✓[/green] {'Starting' if start_docker else 'Skipped'}")
+        console.print()
+    else:
+        console.print("[bold #FF3B30][4/4][/] [bold]Docker[/] [#777]skipped (--no-docker)[/]")
+        console.print()
+
+    launch_onboard = False
+    if not no_onboard:
+        launch_onboard = questionary.confirm(
+            "  Clone your first expert brain now?",
+            default=True,
+            style=style,
+        ).ask()
+        if launch_onboard is None:
+            raise KeyboardInterrupt
+
+    options = SetupOptions(
+        openrouter_api_key=key,
+        default_model=selected_model,
+        stack_profile=selected_profile,
+        telemetry_enabled=selected_profile == "full",
+        no_docker=no_docker or not start_docker,
+        no_onboard=no_onboard,
+        yes=False,
+        dry_run=False,
+        json_output=False,
+    )
+    return options, launch_onboard
+
+
 @app.command()
 def setup(
     openrouter_key: Annotated[Optional[str], typer.Option("--openrouter-key", help="OpenRouter API key")] = None,
@@ -45,11 +164,12 @@ def setup(
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Accept recommended defaults")] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show planned changes without writing files")] = False,
     json_output: Annotated[bool, typer.Option("--json", help="Print machine-readable output")] = False,
+    tui: Annotated[bool, typer.Option("--tui", help="Use legacy fullscreen Textual TUI")] = False,
 ) -> None:
     """Configure .env, agent2.yaml, and optionally start Docker."""
 
     launch_onboard = False
-    if not yes and not json_output and textual_available():
+    if tui and not yes and not json_output and textual_available():
         try:
             from agent2_cli.setup_tui import run_setup_tui
 
@@ -58,16 +178,12 @@ def setup(
             launch_onboard = wizard.create_first_agent and not options.no_onboard
         except KeyboardInterrupt:
             raise typer.Exit(130) from None
+    elif not yes and not json_output:
+        try:
+            options, launch_onboard = _setup_wizard(openrouter_key, model, profile, no_docker, no_onboard)
+        except KeyboardInterrupt:
+            raise typer.Exit(130) from None
     else:
-        if not yes and not json_output:
-            console.print("[bold]Agent2 setup[/bold]")
-            console.print("Recommended models:")
-            for item in MODEL_CHOICES:
-                console.print(f"  - {item}")
-            openrouter_key = openrouter_key or typer.prompt("OpenRouter API key", default="", hide_input=True)
-            model = typer.prompt("Default model", default=model)
-            profile = typer.prompt("Stack profile", default=profile)
-            launch_onboard = not no_onboard and typer.confirm("Create your first Brain Clone agent next?", default=True)
         options = SetupOptions(
             openrouter_api_key=openrouter_key or "",
             default_model=model,
@@ -79,6 +195,7 @@ def setup(
             dry_run=dry_run,
             json_output=json_output,
         )
+
     result = run_setup(_root(), options)
     if json_output:
         console.print(payload_as_json(result))
@@ -91,15 +208,21 @@ def setup(
     if has_key and not dry_run:
         _validate_key(options.openrouter_api_key, options.default_model)
 
-    verb = "Would write" if dry_run else "Configured"
+    console.print()
+    verb = "Would write" if dry_run else "Wrote"
+    console.print(f"  [green]✓[/green] {verb} [bold].env[/bold] and [bold]agent2.yaml[/bold]")
     console.print(
-        f"[bold green]{verb} Agent2[/bold green] with model [cyan]{options.default_model}[/cyan] "
-        f"and profile [cyan]{options.stack_profile}[/cyan]."
+        f"  [green]✓[/green] Model: [#FF3B30]{options.default_model}[/]  "
+        f"Profile: [#FF3B30]{options.stack_profile}[/]"
     )
+    console.print()
+
     if launch_onboard and not dry_run:
+        console.print("[bold]  Starting Brain Clone interview...[/bold]")
+        console.print()
         run_onboarding(
             project_root=_root(), no_llm=False, overwrite=False,
-            use_tui=textual_available(), agentic=has_key, console=console,
+            use_tui=False, agentic=has_key, console=console,
         )
 
 
@@ -242,7 +365,8 @@ def _inject_env_into_process(env_values: dict[str, str]) -> None:
 def _validate_key(api_key: str, model_id: str) -> None:
     """Quick LLM connectivity check after setup."""
 
-    console.print("[dim]Validating OpenRouter key...[/dim]", end=" ")
+    key_preview = api_key[:12] + "..." if len(api_key) > 12 else api_key
+    console.print(f"  [#777]Validating key ({key_preview}) against {model_id}...[/]", end=" ")
     try:
         import asyncio
         from pydantic_ai import Agent
@@ -252,14 +376,14 @@ def _validate_key(api_key: str, model_id: str) -> None:
         model = _build_model(model_id or settings.default_model, settings)
         agent: Agent[None, str] = Agent(model, output_type=str, instructions="Reply: ok")
         asyncio.run(agent.run("test"))
-        console.print("[bold green]valid[/bold green]")
+        console.print("[green]✓ valid[/green]")
     except Exception as exc:
         msg = str(exc)
         if "401" in msg or "auth" in msg.lower():
-            console.print("[bold red]invalid key[/bold red]")
-            console.print(f"[dim]{msg[:120]}[/dim]")
+            console.print("[#FF3B30]✗ invalid[/]")
+            console.print("  [#777]Check your key at openrouter.ai/keys[/]")
         else:
-            console.print(f"[yellow]warning: {msg[:120]}[/yellow]")
+            console.print(f"[yellow]⚠ {msg[:80]}[/yellow]")
 
 
 def _ensure_agent_exists(agent: str) -> None:

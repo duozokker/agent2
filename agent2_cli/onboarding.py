@@ -134,9 +134,23 @@ def run_onboarding(
             spec = asyncio.run(_polish_spec_with_llm(spec))
 
     agent_dir = generate_agent_from_spec(spec, project_root=project_root, overwrite=overwrite)
-    out.print(f"\n[bold green]Generated {spec.name}[/bold green] at {agent_dir}")
-    out.print(f"Run locally: [cyan]uv run agent2 serve {spec.name}[/cyan]")
-    out.print(f"Agent API port in config: [cyan]{spec.port}[/cyan]")
+    out.print()
+    out.print(Panel(
+        f"[green]✓[/green] Generated [bold]{spec.name}[/bold] at {agent_dir}\n\n"
+        f"[bold white]Your agent will run at:[/bold white]\n"
+        f"  [#FF3B30]http://localhost:{spec.port}[/]\n\n"
+        f"[bold white]Useful commands:[/bold white]\n"
+        f"  uv run agent2 serve {spec.name}   [#777]# start the agent API[/]\n"
+        f"  uv run agent2 run {spec.name}     [#777]# send a test request[/]\n"
+        f"  uv run agent2 doctor              [#777]# check your setup[/]\n\n"
+        f"[bold white]Next steps:[/bold white]\n"
+        f"  [#9A9590]• Add knowledge books to knowledge/books/[/]\n"
+        f"  [#9A9590]• Open in Claude Code and run /brain-clone to refine[/]\n"
+        f"  [#9A9590]• Deploy with Docker: docker compose up {spec.name}[/]",
+        title="[bold #FF3B30]●[/bold #FF3B30] [bold]Agent Ready[/bold]",
+        border_style="#252525",
+        padding=(1, 2),
+    ))
     return agent_dir
 
 
@@ -242,12 +256,12 @@ async def _agentic_interview(console: Console) -> AgentSpec:
     console.print()
     console.print(Panel(
         "[bold white]Agent2 Brain Clone[/bold white]\n"
-        "[dim]Adaptive interview powered by your selected model.[/dim]\n\n"
+        "[#9A9590]Adaptive interview powered by your selected model.[/]\n\n"
         "The AI interviewer will ask you about your professional expertise\n"
         "and build a production agent from your answers.\n\n"
-        "[dim italic]Type your answers naturally. Type 'done' to finish early.\n"
-        "Type 'quit' to cancel.[/dim italic]",
-        border_style="#ff5a4f",
+        "[#777]Type your answers naturally. Type 'done' to finish early.\n"
+        "Type 'quit' to cancel.[/]",
+        border_style="#FF3B30",
         padding=(1, 2),
     ))
     console.print()
@@ -303,12 +317,13 @@ async def _agentic_interview(console: Console) -> AgentSpec:
         message_history = result.all_messages()
 
         response_text = result.output
+        phase = _detect_phase(response_text, turn)
         console.print()
         console.print(Rule(style="#333333"))
         console.print(Panel(
             Markdown(response_text),
-            title="[bold #ff5a4f]Brain Clone Interviewer[/bold #ff5a4f]",
-            border_style="#333333",
+            title=f"[bold #FF3B30]Brain Clone[/bold #FF3B30] [#9A9590]{phase}[/]",
+            border_style="#252525",
             padding=(0, 1),
         ))
 
@@ -331,20 +346,20 @@ async def _agentic_interview(console: Console) -> AgentSpec:
 
     console.print()
     console.print(Panel(
-        f"[bold]Agent:[/bold] {spec.name}\n"
-        f"[bold]Role:[/bold] {spec.identity.role} ({spec.identity.years_experience}y in {spec.identity.domain})\n"
-        f"[bold]Case type:[/bold] {spec.case_type}\n"
-        f"[bold]Tools:[/bold] {', '.join(t.name for t in spec.tools) or 'default set'}\n"
-        f"[bold]Knowledge:[/bold] {', '.join(c.name for c in spec.knowledge_collections) or 'none'}\n"
-        f"[bold]Outcomes:[/bold] {', '.join(o.name for o in spec.outcomes)}\n"
-        f"[bold]Chain-of-Thought:[/bold] {len(spec.chain_of_thought_steps)} steps",
-        title="[bold green]Generated Agent Spec[/bold green]",
-        border_style="green",
+        f"[bold white]Agent:[/bold white] [#FF3B30]{spec.name}[/]\n"
+        f"[bold white]Role:[/bold white] {spec.identity.role} ({spec.identity.years_experience}y in {spec.identity.domain})\n"
+        f"[bold white]Case:[/bold white] {spec.case_type}\n"
+        f"[bold white]Tools:[/bold white] {', '.join(t.name for t in spec.tools) or 'default set'}\n"
+        f"[bold white]Books:[/bold white] {', '.join(c.name for c in spec.knowledge_collections) or 'none'}\n"
+        f"[bold white]Outcomes:[/bold white] {', '.join(o.name for o in spec.outcomes)}\n"
+        f"[bold white]Chain-of-Thought:[/bold white] {len(spec.chain_of_thought_steps)} steps",
+        title="[bold #FF3B30]●[/bold #FF3B30] [bold]Agent Spec[/bold]",
+        border_style="#252525",
         padding=(1, 2),
     ))
 
     if not Confirm.ask("\n[bold]Generate this agent?[/bold]", default=True):
-        console.print("[dim]Cancelled. No files written.[/dim]")
+        console.print("[#777]Cancelled. No files written.[/]")
         raise KeyboardInterrupt
 
     return spec
@@ -399,6 +414,27 @@ def _normalize_spec_data(data: dict) -> None:
 
     name = data.get("name", "")
     data["name"] = name.replace("_", "-").replace(" ", "-").lower()
+
+
+_PHASE_KEYWORDS = [
+    (["role", "experience", "professional", "what do you do", "how long"], "Phase 1/6 · Identity"),
+    (["thinking", "chain", "step by step", "walk me through", "first thought", "process"], "Phase 2/6 · Thinking"),
+    (["tool", "desk", "reference", "database", "software", "workspace"], "Phase 3/6 · Tools"),
+    (["book", "manual", "regulation", "document", "knowledge"], "Phase 4/6 · Knowledge"),
+    (["example", "case", "typical", "recent", "scenario", "rejected"], "Phase 5/6 · Examples"),
+    (["output", "work product", "format", "confidence", "final", "deliver"], "Phase 6/6 · Output"),
+]
+
+
+def _detect_phase(response: str, turn: int) -> str:
+    lower = response.lower()
+    for keywords, label in _PHASE_KEYWORDS:
+        matches = sum(1 for kw in keywords if kw in lower)
+        if matches >= 2:
+            return label
+    if turn <= 2:
+        return "Phase 1/6 · Identity"
+    return f"Turn {turn}"
 
 
 async def _polish_spec_with_llm(spec: AgentSpec) -> AgentSpec:
