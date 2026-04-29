@@ -163,26 +163,38 @@ fi
 
 echo ""
 
-# ── Step 4: Run agent2 setup ─────────────────────────────────────────────────
+# ── Step 4: Configure Agent2 ─────────────────────────────────────────────────
 step "Configuring Agent2"
 
-ARGS=()
-if [[ "$DRY_RUN" -eq 1 ]]; then ARGS+=(--dry-run); fi
-if [[ "$NO_DOCKER" -eq 1 ]]; then ARGS+=(--no-docker); fi
-if [[ "$NO_ONBOARD" -eq 1 ]]; then ARGS+=(--no-onboard); fi
-if [[ "$YES" -eq 1 ]]; then ARGS+=(--yes); fi
-
 if [[ "$DRY_RUN" -eq 1 ]]; then
-  info "Would run: uv run agent2 setup ${ARGS[*]+${ARGS[*]}}"
+  info "Would run: uv run agent2 setup --yes"
 elif [[ -t 0 ]]; then
+  # Direct terminal — run the full interactive wizard
   echo ""
-  uv run agent2 setup ${ARGS[@]+"${ARGS[@]}"}
-elif [[ -r /dev/tty ]]; then
-  echo ""
-  uv run agent2 setup ${ARGS[@]+"${ARGS[@]}"} </dev/tty
+  SETUP_ARGS=()
+  if [[ "$NO_DOCKER" -eq 1 ]]; then SETUP_ARGS+=(--no-docker); fi
+  if [[ "$NO_ONBOARD" -eq 1 ]]; then SETUP_ARGS+=(--no-onboard); fi
+  if [[ "$YES" -eq 1 ]]; then SETUP_ARGS+=(--yes); fi
+  uv run agent2 setup ${SETUP_ARGS[@]+"${SETUP_ARGS[@]}"}
 else
-  info "No interactive terminal detected, using defaults"
-  uv run agent2 setup --yes ${ARGS[@]+"${ARGS[@]}"}
+  # Piped mode (curl | bash) — collect key via read, then run non-interactive
+  _OR_KEY=""
+  if [[ -r /dev/tty ]]; then
+    echo ""
+    printf "  ${BOLD}OpenRouter API key${NC} ${DIM}(openrouter.ai/keys, Enter to skip):${NC} "
+    read -r -s _OR_KEY </dev/tty
+    echo ""
+    if [[ -n "$_OR_KEY" ]]; then
+      ok "Key set (${_OR_KEY:0:12}...)"
+    else
+      info "Skipped — you can add it later with: agent2 setup"
+    fi
+  fi
+  SETUP_ARGS=(--yes)
+  if [[ -n "$_OR_KEY" ]]; then SETUP_ARGS+=(--openrouter-key "$_OR_KEY"); fi
+  if [[ "$NO_DOCKER" -eq 1 ]]; then SETUP_ARGS+=(--no-docker); fi
+  if [[ "$NO_ONBOARD" -eq 1 ]]; then SETUP_ARGS+=(--no-onboard); fi
+  uv run agent2 setup "${SETUP_ARGS[@]}"
 fi
 
 echo ""
@@ -190,10 +202,13 @@ echo ""
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo -e "${GREEN}${BOLD}  ✓  Agent2 is ready!${NC}"
 echo ""
-echo -e "${GRAY}  Useful commands:${NC}"
+echo -e "${GRAY}  Get started:${NC}"
 echo -e "    ${BOLD}cd $INSTALL_PATH${NC}"
-echo -e "    uv run agent2 doctor      ${DIM}# check your setup${NC}"
+echo -e "    uv run agent2 setup       ${DIM}# full interactive wizard${NC}"
 echo -e "    uv run agent2 onboard     ${DIM}# create a Brain Clone agent${NC}"
+echo ""
+echo -e "${GRAY}  Other commands:${NC}"
+echo -e "    uv run agent2 doctor      ${DIM}# check your setup${NC}"
 echo -e "    uv run agent2 list        ${DIM}# see available agents${NC}"
 echo -e "    uv run agent2 serve <name> ${DIM}# run an agent locally${NC}"
 echo ""
