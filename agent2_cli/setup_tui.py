@@ -26,8 +26,8 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
     class SetupApp(App[SetupWizardResult]):
         CSS = """
         Screen {
-            background: #0d0f12;
-            color: #f4f4f5;
+            background: #1A1A1A;
+            color: #ffffff;
         }
 
         #shell {
@@ -37,8 +37,8 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
         #hero {
             height: 7;
             padding: 1 3;
-            background: #15171b;
-            border-bottom: tall #2b3038;
+            background: #151515;
+            border-bottom: tall #2A2A2A;
         }
 
         #brand {
@@ -47,7 +47,7 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
         }
 
         #subtitle {
-            color: #a1a1aa;
+            color: #9A9590;
         }
 
         #body {
@@ -57,8 +57,8 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
         #rail {
             width: 33;
             padding: 2;
-            background: #111317;
-            border-right: tall #272b33;
+            background: #0D0D0D;
+            border-right: tall #2A2A2A;
         }
 
         .rail-title {
@@ -68,7 +68,7 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
         }
 
         .rail-muted {
-            color: #71717a;
+            color: #777777;
         }
 
         #panel {
@@ -78,20 +78,20 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
 
         #card {
             height: 1fr;
-            border: tall #272b33;
-            background: #12151a;
+            border: tall #252525;
+            background: #151515;
             padding: 1 2;
         }
 
         .section {
-            color: #ff5a4f;
+            color: #FF3B30;
             text-style: bold;
             margin: 1 0;
         }
 
         Label {
             margin-top: 1;
-            color: #d4d4d8;
+            color: #9A9590;
         }
 
         Input, Select {
@@ -105,7 +105,7 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
 
         .switch-label {
             width: 36;
-            color: #d4d4d8;
+            color: #9A9590;
         }
 
         #actions {
@@ -119,9 +119,9 @@ def run_setup_tui(*, default_model: str = DEFAULT_MODEL, default_profile: str = 
         }
 
         #summary {
-            color: #d4d4d8;
-            background: #0d0f12;
-            border: tall #2b3038;
+            color: #9A9590;
+            background: #0D0D0D;
+            border: tall #2A2A2A;
             padding: 1 2;
             margin-top: 1;
         }
