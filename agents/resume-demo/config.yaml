@@ -1,6 +1,6 @@
 name: resume-demo
 description: "Framework demo for pause/resume message history"
-model: openrouter/anthropic/claude-sonnet-4
+model: ""
 port: 8005
 timeout_seconds: 120
 max_retries: 3

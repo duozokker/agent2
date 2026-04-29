@@ -1,12 +1,27 @@
 """Tests for shared.config module."""
 
-from shared.config import Settings, load_agent_config, load_collections_for_agent
+from shared.config import FrameworkConfig, Settings, load_agent_config, load_collections_for_agent, load_framework_config
 
 def test_settings_from_env():
-    """Settings loads from environment variables."""
+    """Settings loads from agent2.yaml before env fallback."""
     s = Settings.from_env()
     assert s.api_bearer_tokens == ("test-token",)
-    assert s.default_model == "test"
+    assert s.default_model == "~anthropic/claude-sonnet-latest"
+    assert s.provider_order == ("anthropic",)
+
+
+def test_settings_uses_env_model_when_no_framework_config(monkeypatch):
+    """DEFAULT_MODEL remains the fallback for installs without agent2.yaml."""
+    monkeypatch.setattr("shared.config.load_framework_config", lambda: FrameworkConfig())
+    monkeypatch.setenv("DEFAULT_MODEL", "test-env-model")
+    s = Settings.from_env()
+    assert s.default_model == "test-env-model"
+
+
+def test_load_framework_config_reads_agent2_yaml():
+    config = load_framework_config()
+    assert config.default_model == "~anthropic/claude-sonnet-latest"
+    assert config.provider_policy["allow_fallbacks"] is False
 
 def test_settings_has_llm_key_false(monkeypatch):
     """has_llm_key is False when key is empty."""

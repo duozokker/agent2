@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir \
     python-multipart \
     pyyaml
 
+COPY agent2.yaml ./agent2.yaml
 COPY shared/ ./shared/
 COPY agents/scandal-market-finder/ ./agent/
 RUN mkdir -p agents/scandal-market-finder && \

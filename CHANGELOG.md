@@ -4,6 +4,24 @@ All notable changes to Agent2 will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.0] - Unreleased
+
+### Added
+- First-class `agent2` CLI with setup, onboard, doctor, list, run, serve, and
+  publish-check commands.
+- Static installer scripts for macOS/Linux and Windows.
+- Agentic Brain Clone onboarding harness using validated `AgentSpec` objects and
+  deterministic templates.
+- Central `agent2.yaml` framework configuration for default model, provider
+  policy, stack profile, telemetry, and framework ports.
+- Generated-agent fixture and tests for onboarding without LLM calls.
+
+### Changed
+- Normal agent configs now use `model: ""` and resolve through global framework
+  config.
+- Docker agent images copy `agent2.yaml` so global config is available in
+  containers.
+
 ## [0.2.0] - 2026-04-28
 
 ### Added

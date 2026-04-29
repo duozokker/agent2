@@ -15,7 +15,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 # These modules only depend on stdlib + PyYAML and are always safe to import.
-from shared.config import AgentConfig, Settings, load_agent_config, load_collection_catalog, load_collections_for_agent
+from shared.config import (
+    AgentConfig,
+    FrameworkConfig,
+    Settings,
+    load_agent_config,
+    load_collection_catalog,
+    load_collections_for_agent,
+    load_framework_config,
+)
 from shared.errors import ProblemError
 from shared.message_history import deserialize_messages, serialize_messages
 
@@ -38,8 +46,10 @@ def __getattr__(name: str):
 
 __all__ = [
     "AgentConfig",
+    "FrameworkConfig",
     "Settings",
     "load_agent_config",
+    "load_framework_config",
     "load_collection_catalog",
     "load_collections_for_agent",
     "create_app",

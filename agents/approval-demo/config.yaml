@@ -1,6 +1,6 @@
 name: approval-demo
 description: "Framework demo for pending actions and human approvals"
-model: openrouter/anthropic/claude-sonnet-4
+model: ""
 port: 8004
 timeout_seconds: 120
 max_retries: 3

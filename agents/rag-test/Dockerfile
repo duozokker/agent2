@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir \
     "redis>=5.0" \
     "pyyaml>=6.0" \
     "langfuse>=2.0"
+COPY agent2.yaml ./agent2.yaml
 COPY shared/ ./shared/
 COPY agents/rag-test/ ./agent/
 RUN mkdir -p agents/rag-test && cp agent/config.yaml agents/rag-test/config.yaml

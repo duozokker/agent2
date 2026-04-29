@@ -6,37 +6,59 @@
 
 Not just how they think — how they work. The tools, the books, the memory, the judgment calls.
 
-## Quick start — 2 minutes
+## Quick start
 
-**Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (or Codex, Cursor, Gemini CLI), [Docker](https://www.docker.com/), [Python 3.12+](https://www.python.org/) with [uv](https://docs.astral.sh/uv/)
+The intended v0.3 flow is:
 
-### Step 1: Clone and start
+```bash
+curl -fsSL https://getagent2.dev/install.sh | bash
+agent2 onboard
+```
+
+The hosted `getagent2.dev` script is a deployment target. The repo already ships
+the installer locally:
 
 ```bash
 git clone https://github.com/duozokker/agent2.git
 cd agent2
-cp .env.example .env
-docker compose up -d
+scripts/install.sh
+agent2 onboard
 ```
 
-### Step 2: Open in your AI coding tool and clone an expert
+This does three things:
 
-Open the repo in Claude Code (or Codex, Cursor, Gemini CLI). Then type:
+- `agent2 setup` writes `.env` and `agent2.yaml`, picks the model, configures
+  Docker profile and telemetry, and backs up existing config files before
+  replacing them.
+- `agent2 onboard` runs the Brain Clone onboarding harness. The LLM may help
+  shape the interview into an `AgentSpec`, but only deterministic Python
+  templates write files.
+- `agent2 doctor` checks Docker, uv, config files, compose validity, ports, and
+  local health endpoints.
 
-> Clone a tax accountant who processes invoices, checks regulations, and produces booking entries.
-
-Agent2 ships with built-in skills. Your AI tool reads them, runs `/brain-clone`, interviews you about the domain, and generates a complete agent — prompt, tools, knowledge, schemas, Docker config. Everything.
-
-### Step 3: Deploy
+You can also run the steps manually:
 
 ```bash
-docker compose build my-agent
-docker compose up -d my-agent
+uv sync --extra dev
+uv run agent2 setup
+uv run agent2 onboard
+uv run agent2 doctor
 ```
 
-Your expert is now a production API. Auth, typed output, knowledge search, memory, human approval — all included.
+For non-interactive generation from a checked-in spec:
 
-That's it. No framework to learn. Your AI coding tool IS the interface.
+```bash
+uv run agent2 onboard --from-spec tests/fixtures/roofing-agent-spec.json --no-llm
+uv run agent2 serve roofing-field-advisor
+```
+
+Your expert is now a local Agent2 API. Auth, typed output, knowledge search,
+memory, human approval, mock mode, and Docker wiring are generated with it.
+
+Open the repo in Claude Code, Codex, Cursor, OpenCode, or another AI coding tool
+when you want to extend the generated agent. `AGENTS.md`, `llms.txt`, and the
+skills in `.claude/skills`, `.codex/skills`, `.gemini/skills`, and
+`.github/skills` teach coding agents the Agent2 pattern.
 
 ---
 
@@ -79,7 +101,10 @@ The result is a production HTTP service — not a chatbot, not a prompt wrapper.
 
 ---
 
-## Build your first agent
+## Build your first agent manually
+
+Most users should start with `agent2 onboard`. Manual scaffolding is useful when
+you already know the framework internals.
 
 ### 1. Copy the template
 
@@ -185,6 +210,7 @@ Agent2 stays close to the ecosystem instead of reinventing it:
 | Topic | Link |
 |---|---|
 | Architecture | [docs/architecture.md](./docs/architecture.md) |
+| CLI Onboarding | [docs/cli-onboarding.md](./docs/cli-onboarding.md) |
 | Brain Clone Pattern | [docs/brain-clone-pattern.md](./docs/brain-clone-pattern.md) |
 | Sachbearbeiter Reference Pattern | [docs/reference-agents/sachbearbeiter-pattern.md](./docs/reference-agents/sachbearbeiter-pattern.md) |
 | Getting Started | [docs/getting-started.md](./docs/getting-started.md) |
@@ -231,7 +257,7 @@ Skills follow the [open SKILL.md standard](https://agents.md/) and are available
 
 Agent2 provides production-tested primitives for turning domain expertise into AI agents — born from real enterprise work processing millions of documents for German tax firms.
 
-Current release: **v0.2.0** (pre-release, API stable for core features)
+Current release target: **v0.3.0** (pre-release, CLI onboarding in progress)
 
 ### What's here
 
@@ -243,7 +269,7 @@ Current release: **v0.2.0** (pre-release, API stable for core features)
 - Provider-aware execution with cache routing
 - Tool interception and collection scoping
 - Mock mode for development without LLM keys
-- 39 unit tests covering framework primitives
+- 56 unit tests covering framework primitives and onboarding
 - GitHub Actions CI with lint + test + Docker verify
 - 5 built-in skills for AI coding tools (Claude Code, Codex, Gemini CLI, Copilot)
 
@@ -251,7 +277,8 @@ Current release: **v0.2.0** (pre-release, API stable for core features)
 
 - [ ] PyPI package (`pip install agent2`)
 - [ ] Agent2 Cloud (managed hosting + dashboard)
-- [ ] CLI for agent scaffolding
+- [x] CLI for setup, onboarding, diagnostics, and generated-agent checks
+- [ ] Agent2 Studio UI for non-technical domain experts
 - [ ] Multi-agent orchestration primitives
 - [ ] WebSocket streaming for long-running tasks
 - [ ] Plugin system for community agent templates
