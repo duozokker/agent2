@@ -24,8 +24,8 @@ def run_brain_clone_tui() -> AgentSpec:
     class BrainCloneApp(App[AgentSpec]):
         CSS = """
         Screen {
-            background: #0d0f12;
-            color: #f4f4f5;
+            background: #1A1A1A;
+            color: #ffffff;
         }
 
         #shell {
@@ -35,8 +35,8 @@ def run_brain_clone_tui() -> AgentSpec:
         #hero {
             height: 5;
             padding: 1 2;
-            background: #15171b;
-            border-bottom: tall #2b3038;
+            background: #151515;
+            border-bottom: tall #2A2A2A;
         }
 
         #brand {
@@ -45,7 +45,7 @@ def run_brain_clone_tui() -> AgentSpec:
         }
 
         #subtitle {
-            color: #a1a1aa;
+            color: #9A9590;
         }
 
         #body {
@@ -55,8 +55,8 @@ def run_brain_clone_tui() -> AgentSpec:
         #rail {
             width: 31;
             padding: 1 2;
-            background: #111317;
-            border-right: tall #272b33;
+            background: #0D0D0D;
+            border-right: tall #2A2A2A;
         }
 
         .rail-title {
@@ -68,12 +68,12 @@ def run_brain_clone_tui() -> AgentSpec:
         .rail-item {
             height: 3;
             padding: 0 1;
-            color: #71717a;
+            color: #777777;
         }
 
         .rail-item-active {
             color: #ffffff;
-            background: #20242c;
+            background: #1A1A1A;
             text-style: bold;
         }
 
@@ -88,14 +88,14 @@ def run_brain_clone_tui() -> AgentSpec:
         }
 
         #stage-help {
-            color: #a1a1aa;
+            color: #9A9590;
             margin-bottom: 1;
         }
 
         #form {
             height: 1fr;
-            border: tall #272b33;
-            background: #12151a;
+            border: tall #252525;
+            background: #151515;
             padding: 1 2;
         }
 
@@ -109,13 +109,13 @@ def run_brain_clone_tui() -> AgentSpec:
 
         .section {
             margin: 1 0;
-            color: #ff5a4f;
+            color: #FF3B30;
             text-style: bold;
         }
 
         Label {
             margin-top: 1;
-            color: #d4d4d8;
+            color: #9A9590;
         }
 
         Input {
@@ -137,14 +137,14 @@ def run_brain_clone_tui() -> AgentSpec:
         }
 
         #status {
-            color: #ffb4ac;
+            color: #FF3B30;
             margin-top: 1;
         }
 
         #review {
-            color: #e4e4e7;
-            background: #0d0f12;
-            border: tall #2b3038;
+            color: #9A9590;
+            background: #0D0D0D;
+            border: tall #2A2A2A;
             padding: 1 2;
             margin-top: 1;
         }

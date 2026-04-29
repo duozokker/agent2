@@ -19,7 +19,7 @@ from agent2_cli.doctor import run_doctor
 from agent2_cli.generator import GenerationError
 from agent2_cli.onboarding import run_onboarding, textual_available
 from agent2_cli.setup import DEFAULT_MODEL, MODEL_CHOICES, SetupOptions, payload_as_json, run_setup
-from shared.config import load_agent_config, load_framework_config
+from shared.config import Settings, load_agent_config, load_framework_config
 
 app = typer.Typer(help="Agent2 framework CLI")
 console = Console()
@@ -83,13 +83,24 @@ def setup(
     if json_output:
         console.print(payload_as_json(result))
         return
+
+    if not dry_run:
+        _inject_env_into_process(result.get("env", {}))
+
+    has_key = bool(options.openrouter_api_key)
+    if has_key and not dry_run:
+        _validate_key(options.openrouter_api_key, options.default_model)
+
     verb = "Would write" if dry_run else "Configured"
     console.print(
         f"[bold green]{verb} Agent2[/bold green] with model [cyan]{options.default_model}[/cyan] "
         f"and profile [cyan]{options.stack_profile}[/cyan]."
     )
     if launch_onboard and not dry_run:
-        run_onboarding(project_root=_root(), no_llm=False, overwrite=False, use_tui=textual_available(), console=console)
+        run_onboarding(
+            project_root=_root(), no_llm=False, overwrite=False,
+            use_tui=textual_available(), agentic=has_key, console=console,
+        )
 
 
 @app.command()
@@ -97,11 +108,13 @@ def onboard(
     from_spec: Annotated[Optional[Path], typer.Option("--from-spec", help="Generate from an AgentSpec JSON file")] = None,
     no_llm: Annotated[bool, typer.Option("--no-llm", help="Use deterministic questionnaire/spec only")] = False,
     no_tui: Annotated[bool, typer.Option("--no-tui", help="Use Rich prompts instead of the Textual form")] = False,
+    agentic: Annotated[bool, typer.Option("--agentic", help="Use LLM-powered adaptive interview instead of static form")] = False,
     overwrite: Annotated[bool, typer.Option("--overwrite", help="Overwrite an existing generated agent")] = False,
 ) -> None:
     """Run the Brain Clone onboarding harness."""
 
     use_tui = from_spec is None and not no_tui and textual_available()
+    use_agentic = agentic or (from_spec is None and not no_llm and Settings.from_env().has_llm_key and not no_tui)
     try:
         run_onboarding(
             project_root=_root(),
@@ -109,6 +122,7 @@ def onboard(
             no_llm=no_llm,
             overwrite=overwrite,
             use_tui=use_tui,
+            agentic=use_agentic,
             console=console,
         )
     except GenerationError as exc:
@@ -213,6 +227,39 @@ def publish_check() -> None:
         raise typer.Exit(1)
     config = load_framework_config(_root() / "agent2.yaml")
     console.print(f"[bold green]publish-check passed[/bold green] default_model={config.default_model or '<env>'}")
+
+
+def _inject_env_into_process(env_values: dict[str, str]) -> None:
+    """Push setup-generated env values into the running process so that
+    subsequent calls (like ``agent2 onboard``) pick them up immediately
+    without the user having to ``source .env`` manually."""
+
+    for key, value in env_values.items():
+        if value:
+            os.environ[key] = value
+
+
+def _validate_key(api_key: str, model_id: str) -> None:
+    """Quick LLM connectivity check after setup."""
+
+    console.print("[dim]Validating OpenRouter key...[/dim]", end=" ")
+    try:
+        import asyncio
+        from pydantic_ai import Agent
+        from shared.runtime import _build_model
+
+        settings = Settings.from_env()
+        model = _build_model(model_id or settings.default_model, settings)
+        agent: Agent[None, str] = Agent(model, output_type=str, instructions="Reply: ok")
+        asyncio.run(agent.run("test"))
+        console.print("[bold green]valid[/bold green]")
+    except Exception as exc:
+        msg = str(exc)
+        if "401" in msg or "auth" in msg.lower():
+            console.print("[bold red]invalid key[/bold red]")
+            console.print(f"[dim]{msg[:120]}[/dim]")
+        else:
+            console.print(f"[yellow]warning: {msg[:120]}[/yellow]")
 
 
 def _ensure_agent_exists(agent: str) -> None:
