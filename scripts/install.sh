@@ -101,7 +101,37 @@ echo ""
 step "Setting up Agent2"
 
 if [[ -f "$INSTALL_PATH/pyproject.toml" && -d "$INSTALL_PATH/shared" ]]; then
-  ok "Agent2 repo found at $INSTALL_PATH"
+  info "Agent2 found at $INSTALL_PATH"
+  if [[ "$YES" -eq 1 ]]; then
+    _UPDATE_CHOICE="update"
+  elif [[ -r /dev/tty ]]; then
+    echo -e "  ${BOLD}What would you like to do?${NC}"
+    echo -e "    ${BOLD}1)${NC} Update to latest version ${DIM}(git pull + uv sync)${NC}"
+    echo -e "    ${BOLD}2)${NC} Fresh install ${DIM}(delete and re-clone)${NC}"
+    echo -e "    ${BOLD}3)${NC} Keep as-is ${DIM}(skip to setup)${NC}"
+    printf "  Choice [1]: "
+    read -r _UPDATE_CHOICE </dev/tty
+    _UPDATE_CHOICE="${_UPDATE_CHOICE:-1}"
+  else
+    _UPDATE_CHOICE="update"
+  fi
+  case "$_UPDATE_CHOICE" in
+    2|fresh)
+      info "Removing old install..."
+      rm -rf "$INSTALL_PATH"
+      info "Cloning Agent2..."
+      git clone --quiet "$REPO_URL" "$INSTALL_PATH"
+      ok "Fresh install at $INSTALL_PATH"
+      ;;
+    3|keep)
+      ok "Keeping existing install"
+      ;;
+    *)
+      info "Updating..."
+      (cd "$INSTALL_PATH" && git pull --quiet origin main 2>/dev/null || git pull --quiet)
+      ok "Updated to latest version"
+      ;;
+  esac
 else
   if [[ -e "$INSTALL_PATH" && -n "$(find "$INSTALL_PATH" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
     fail "$INSTALL_PATH exists but is not an Agent2 repo. Use --path to pick a different location."
