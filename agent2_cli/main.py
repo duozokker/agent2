@@ -48,31 +48,48 @@ def setup(
 ) -> None:
     """Configure .env, agent2.yaml, and optionally start Docker."""
 
-    if not yes and not json_output:
-        console.print("[bold]Agent2 setup[/bold]")
-        console.print("Recommended models:")
-        for item in MODEL_CHOICES:
-            console.print(f"  - {item}")
-        openrouter_key = openrouter_key or typer.prompt("OpenRouter API key", default="", hide_input=True)
-        model = typer.prompt("Default model", default=model)
-        profile = typer.prompt("Stack profile", default=profile)
-    options = SetupOptions(
-        openrouter_api_key=openrouter_key or "",
-        default_model=model,
-        stack_profile=profile,
-        telemetry_enabled=telemetry or profile == "full",
-        no_docker=no_docker,
-        no_onboard=no_onboard,
-        yes=yes,
-        dry_run=dry_run,
-        json_output=json_output,
-    )
+    launch_onboard = False
+    if not yes and not json_output and textual_available():
+        try:
+            from agent2_cli.setup_tui import run_setup_tui
+
+            wizard = run_setup_tui(default_model=model, default_profile=profile)
+            options = wizard.options
+            launch_onboard = wizard.create_first_agent and not options.no_onboard
+        except KeyboardInterrupt:
+            raise typer.Exit(130) from None
+    else:
+        if not yes and not json_output:
+            console.print("[bold]Agent2 setup[/bold]")
+            console.print("Recommended models:")
+            for item in MODEL_CHOICES:
+                console.print(f"  - {item}")
+            openrouter_key = openrouter_key or typer.prompt("OpenRouter API key", default="", hide_input=True)
+            model = typer.prompt("Default model", default=model)
+            profile = typer.prompt("Stack profile", default=profile)
+            launch_onboard = not no_onboard and typer.confirm("Create your first Brain Clone agent next?", default=True)
+        options = SetupOptions(
+            openrouter_api_key=openrouter_key or "",
+            default_model=model,
+            stack_profile=profile,
+            telemetry_enabled=telemetry or profile == "full",
+            no_docker=no_docker,
+            no_onboard=no_onboard,
+            yes=yes,
+            dry_run=dry_run,
+            json_output=json_output,
+        )
     result = run_setup(_root(), options)
     if json_output:
         console.print(payload_as_json(result))
         return
     verb = "Would write" if dry_run else "Configured"
-    console.print(f"[bold green]{verb} Agent2[/bold green] with model [cyan]{model}[/cyan] and profile [cyan]{profile}[/cyan].")
+    console.print(
+        f"[bold green]{verb} Agent2[/bold green] with model [cyan]{options.default_model}[/cyan] "
+        f"and profile [cyan]{options.stack_profile}[/cyan]."
+    )
+    if launch_onboard and not dry_run:
+        run_onboarding(project_root=_root(), no_llm=False, overwrite=False, use_tui=textual_available(), console=console)
 
 
 @app.command()
