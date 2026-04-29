@@ -144,9 +144,15 @@ if [[ "$YES" -eq 1 ]]; then ARGS+=(--yes); fi
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
   info "Would run: uv run agent2 setup ${ARGS[*]+${ARGS[*]}}"
-else
+elif [[ -t 0 ]]; then
   echo ""
   uv run agent2 setup ${ARGS[@]+"${ARGS[@]}"}
+elif [[ -r /dev/tty ]]; then
+  echo ""
+  uv run agent2 setup ${ARGS[@]+"${ARGS[@]}"} </dev/tty
+else
+  info "No interactive terminal detected, using defaults"
+  uv run agent2 setup --yes ${ARGS[@]+"${ARGS[@]}"}
 fi
 
 echo ""
