@@ -14,6 +14,14 @@ from pydantic_ai.exceptions import ModelAPIError
 from shared.message_history import serialize_messages
 
 
+@pytest.fixture(autouse=True)
+def _disable_learnings_in_tests():
+    """Prevent learnings injection from polluting test assertions."""
+    os.environ["AGENT2_DISABLE_LEARNINGS"] = "1"
+    yield
+    os.environ.pop("AGENT2_DISABLE_LEARNINGS", None)
+
+
 @pytest.fixture
 def app():
     """Create a test app instance."""

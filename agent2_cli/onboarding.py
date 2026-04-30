@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime
 from pathlib import Path
 from rich.console import Console
 from rich.markdown import Markdown
@@ -30,57 +31,7 @@ interview notes into a valid AgentSpec. Preserve the Sachbearbeiter
 Chain-of-Thought as explicit operational steps. Do not generate code.
 """
 
-AGENTIC_INTERVIEW_PROMPT = """\
-You are the Agent2 Brain Clone interviewer. Your job is to interview a domain
-expert and extract everything needed to build a production AI agent that clones
-their professional brain.
-
-You conduct an adaptive, conversational interview across these phases:
-
-## Phase 1: Identity
-Understand WHO this expert is. Ask about their role, years of experience, domain,
-what separates them from a beginner, and their work style. Be natural — ask
-follow-up questions based on their answers.
-
-## Phase 2: Thinking Process (MOST IMPORTANT)
-Extract the expert's ACTUAL Sachbearbeiter Chain-of-Thought. Ask them to walk
-through a recent case step by step. Push for specifics — do NOT accept vague
-answers like "I analyze it". Ask: "What exactly do you check first? Then what?
-When do you hesitate? When do you look something up vs trust your memory?"
-
-## Phase 3: Tools and Workspace
-Map their real-world tools to categories. Ask: "What's on your desk? Which
-reference books do you use? What databases? Do you keep personal notes? When do
-you search the internet? Do you send emails as part of work?"
-
-## Phase 4: Knowledge and Reference Material
-Identify what goes into knowledge books. Ask: "Which books, manuals, or
-regulations are essential? If you could keep only 3 reference books, which ones?"
-
-## Phase 5: Example Cases
-Collect 2-3 diverse cases. Ask for: a typical case, one where they asked for
-clarification, and one they rejected. For each, capture the thinking chain.
-
-## Phase 6: Output Format
-Ask: "When you finish a case, what does the work product look like? What fields
-must always be present? How do you express confidence?"
-
-## Interview Rules
-- Ask ONE question at a time. Wait for the answer before the next question.
-- Adapt your questions based on their answers — this is a conversation, not a form.
-- Use the expert's domain language, not generic AI terminology.
-- When you have enough information for a phase, naturally transition to the next.
-- Be warm and professional. The expert should feel like they're talking to a
-  colleague who genuinely wants to understand their work.
-- After Phase 6, briefly summarize what you've learned and ask if anything is missing.
-- When the expert confirms OR says "done", "that's it", "nothing else", or similar,
-  immediately finalize. Do NOT ask additional clarifying questions after the user
-  signals completion.
-- When finalizing, say exactly: "INTERVIEW_COMPLETE" on its own line,
-  followed by the collected data as a structured JSON block.
-- If the user provides very detailed answers, you can skip ahead — don't pad the
-  interview artificially. 6-10 turns total is ideal.
-
+_INTERVIEW_OUTPUT_FORMAT = """
 ## Output Format When Complete
 When you say INTERVIEW_COMPLETE, output a JSON object with these fields:
 {
@@ -103,6 +54,171 @@ When you say INTERVIEW_COMPLETE, output a JSON object with these fields:
 
 Start the interview now. Greet the expert warmly and ask about their professional role.
 """
+
+_SKILL_SECTIONS_FOR_INTERVIEW = (
+    "## Anti-Sycophancy Rules",
+    "## Forcing Questions & Pushback Patterns",
+    "### Phase 1:",
+    "### Phase 2:",
+    "## Phase 2.5:",
+    "### Phase 3:",
+    "### Phase 4:",
+    "### Phase 5:",
+    "### Phase 6:",
+    "## Phase 6.5:",
+)
+
+
+def _load_interview_prompt_from_skill() -> str:
+    """Build the agentic interview prompt from the canonical SKILL.md.
+
+    Extracts the interview phases, anti-sycophancy rules, and forcing questions
+    from the brain-clone SKILL.md so there is a single source of truth.
+    Falls back to a minimal hardcoded prompt if SKILL.md is unreadable.
+    """
+    skill_paths = [
+        Path(__file__).resolve().parent.parent / ".claude" / "skills" / "brain-clone" / "SKILL.md",
+        Path.home() / ".claude" / "skills" / "gstack" / "brain-clone" / "SKILL.md",
+    ]
+    skill_content = ""
+    for p in skill_paths:
+        if p.exists():
+            try:
+                skill_content = p.read_text(encoding="utf-8")
+                break
+            except OSError:
+                continue
+
+    if not skill_content:
+        return _FALLBACK_INTERVIEW_PROMPT
+
+    sections: list[str] = []
+    lines = skill_content.splitlines()
+    capturing = False
+    stop_headers = {
+        "## The 5-Layer Prompt Architecture",
+        "## System Prompt Template",
+        "## Tool Generation Patterns",
+        "## before_run Pattern",
+        "## after_run Pattern",
+        "## Common Mistakes",
+        "## Cross-References",
+        "## Agent Quality Rating",
+        "## Agent Slop Detection",
+        "## Interview Session Persistence",
+        "## Completion Status Protocol",
+    }
+
+    for line in lines:
+        if any(line.startswith(s) for s in _SKILL_SECTIONS_FOR_INTERVIEW):
+            capturing = True
+        if capturing and line.startswith("## ") and line.strip() in stop_headers:
+            capturing = False
+            continue
+        if capturing:
+            sections.append(line)
+
+    if not sections:
+        return _FALLBACK_INTERVIEW_PROMPT
+
+    extracted = "\n".join(sections).strip()
+
+    preamble = """\
+You are the Agent2 Brain Clone interviewer. Your job is to interview a domain
+expert and extract everything needed to build a production AI agent that clones
+their professional brain.
+
+You conduct an adaptive, conversational interview. Each phase has a gate: do NOT
+proceed until the current phase yields specific, concrete answers.
+
+"""
+
+    rules = """
+## Interview Rules
+- Ask ONE question at a time. Wait for the answer before the next question.
+- Adapt your questions based on their answers — this is a conversation, not a form.
+- Use the expert's domain language, not generic AI terminology.
+- When you have enough information for a phase, state the gate result and
+  transition naturally.
+- Be warm but rigorous. Warmth in tone, rigor in specificity.
+- After all phases, summarize and ask if anything is missing.
+- When the expert confirms OR says "done", "that's it", "nothing else", or similar,
+  immediately finalize. Do NOT ask additional clarifying questions after the user
+  signals completion.
+- When finalizing, say exactly: "INTERVIEW_COMPLETE" on its own line,
+  followed by the collected data as a structured JSON block.
+- If the user provides very detailed answers, you can skip ahead — don't pad the
+  interview artificially. 8-15 turns total is ideal.
+"""
+
+    return preamble + extracted + "\n" + rules + _INTERVIEW_OUTPUT_FORMAT
+
+
+_FALLBACK_INTERVIEW_PROMPT = """\
+You are the Agent2 Brain Clone interviewer. Interview a domain expert across
+these phases: (1) Identity, (2) Thinking Process, (2.5) Premise Challenge,
+(3) Tools, (4) Knowledge, (5) Example Cases, (6) Output Format, (6.5) Scope.
+
+Ask ONE question at a time. Push for specifics — reject vague answers like
+"I analyze it". When done, say INTERVIEW_COMPLETE and output a JSON AgentSpec.
+""" + _INTERVIEW_OUTPUT_FORMAT
+
+
+def _get_interview_prompt() -> str:
+    """Return the interview prompt, loading from SKILL.md on first call."""
+    if not hasattr(_get_interview_prompt, "_cached"):
+        _get_interview_prompt._cached = _load_interview_prompt_from_skill()  # type: ignore[attr-defined]
+    return _get_interview_prompt._cached  # type: ignore[attr-defined]
+
+
+SESSIONS_DIR = Path.home() / ".agent2" / "brain-clone-sessions"
+
+
+def _save_interview_session(agent_name: str, phase: int, messages: list, console: Console) -> None:
+    """Persist interview progress so it can be resumed across sessions."""
+    SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    session_file = SESSIONS_DIR / f"{agent_name}.json"
+    session_data = {
+        "agent_name": agent_name,
+        "current_phase": phase,
+        "updated_at": datetime.now().isoformat(),
+        "message_count": len(messages),
+    }
+    try:
+        session_file.write_text(json.dumps(session_data, indent=2), encoding="utf-8")
+    except OSError as exc:
+        console.print(f"[dim]Could not save session: {exc}[/dim]")
+
+
+def _check_existing_session(console: Console) -> str | None:
+    """Check for in-progress brain clone sessions and offer to resume."""
+    if not SESSIONS_DIR.exists():
+        return None
+    sessions = sorted(SESSIONS_DIR.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not sessions:
+        return None
+    try:
+        data = json.loads(sessions[0].read_text(encoding="utf-8"))
+        agent_name = data.get("agent_name", "unknown")
+        phase = data.get("current_phase", 0)
+        updated = data.get("updated_at", "unknown")[:10]
+        console.print(Panel(
+            f"[bold]Found in-progress session:[/bold] {agent_name}\n"
+            f"Phase {phase}/8, last active {updated}",
+            border_style="#252525",
+        ))
+        resume = Confirm.ask(f"Resume interview for '{agent_name}'?", default=True)
+        if resume:
+            return agent_name
+    except (json.JSONDecodeError, OSError):
+        pass
+    return None
+
+
+def _clear_session(agent_name: str) -> None:
+    """Remove a completed interview session file."""
+    session_file = SESSIONS_DIR / f"{agent_name}.json"
+    session_file.unlink(missing_ok=True)
 
 
 def load_spec(path: Path) -> AgentSpec:
@@ -253,6 +369,8 @@ async def _agentic_interview(console: Console) -> AgentSpec:
     settings = Settings.from_env()
     model = _build_model(settings.default_model, settings)
 
+    resumed_name = _check_existing_session(console)
+
     console.print()
     console.print(Panel(
         "[bold white]Agent2 Brain Clone[/bold white]\n"
@@ -269,7 +387,7 @@ async def _agentic_interview(console: Console) -> AgentSpec:
     agent: Agent[None, str] = Agent(
         model,
         output_type=str,
-        instructions=AGENTIC_INTERVIEW_PROMPT,
+        instructions=_get_interview_prompt(),
     )
 
     message_history: list[ModelMessage] = []
@@ -327,9 +445,18 @@ async def _agentic_interview(console: Console) -> AgentSpec:
             padding=(0, 1),
         ))
 
+        _save_interview_session(
+            resumed_name or "in-progress",
+            _detect_phase_number(response_text, turn),
+            message_history,
+            console,
+        )
+
         if "INTERVIEW_COMPLETE" in response_text:
             spec = _extract_spec_from_response(response_text, console)
             if spec is not None:
+                _clear_session(resumed_name or "in-progress")
+                _clear_session(spec.name)
                 break
             console.print("[yellow]Could not parse the agent spec. Continuing interview...[/yellow]")
             message_history.append(
@@ -417,23 +544,38 @@ def _normalize_spec_data(data: dict) -> None:
 
 
 _PHASE_KEYWORDS = [
-    (["role", "experience", "professional", "what do you do", "how long"], "Phase 1/6 · Identity"),
-    (["thinking", "chain", "step by step", "walk me through", "first thought", "process"], "Phase 2/6 · Thinking"),
-    (["tool", "desk", "reference", "database", "software", "workspace"], "Phase 3/6 · Tools"),
-    (["book", "manual", "regulation", "document", "knowledge"], "Phase 4/6 · Knowledge"),
-    (["example", "case", "typical", "recent", "scenario", "rejected"], "Phase 5/6 · Examples"),
-    (["output", "work product", "format", "confidence", "final", "deliver"], "Phase 6/6 · Output"),
+    (["role", "experience", "professional", "what do you do", "how long"], "Phase 1/8 · Identity", 1),
+    (["thinking", "chain", "step by step", "walk me through", "first thought", "process"], "Phase 2/8 · Thinking", 2),
+    (["premise", "confirm", "assumption", "building the agent on", "wrong in production"], "Phase 2.5/8 · Premises", 3),
+    (["tool", "desk", "reference", "database", "software", "workspace", "browser", "tabs"], "Phase 3/8 · Tools", 3),
+    (["book", "manual", "regulation", "document", "knowledge", "collection"], "Phase 4/8 · Knowledge", 4),
+    (["example", "case", "typical", "recent", "scenario", "rejected", "clarification"], "Phase 5/8 · Examples", 5),
+    (["output", "work product", "format", "confidence", "final", "deliver"], "Phase 6/8 · Output", 6),
+    (["scope", "smallest version", "one agent or", "approval", "separate"], "Phase 6.5/8 · Scope", 7),
 ]
 
 
-def _detect_phase(response: str, turn: int) -> str:
+def _detect_phase_number(response: str, turn: int) -> int:
+    """Return a numeric phase estimate (1-8) based on response content."""
     lower = response.lower()
-    for keywords, label in _PHASE_KEYWORDS:
+    for keywords, _label, number in _PHASE_KEYWORDS:
+        matches = sum(1 for kw in keywords if kw in lower)
+        if matches >= 2:
+            return number
+    if turn <= 2:
+        return 1
+    return min(turn, 8)
+
+
+def _detect_phase(response: str, turn: int) -> str:
+    """Return a human-readable phase label for the interview panel."""
+    lower = response.lower()
+    for keywords, label, _number in _PHASE_KEYWORDS:
         matches = sum(1 for kw in keywords if kw in lower)
         if matches >= 2:
             return label
     if turn <= 2:
-        return "Phase 1/6 · Identity"
+        return "Phase 1/8 · Identity"
     return f"Turn {turn}"
 
 

@@ -9,6 +9,10 @@ description: Use when building an agent that needs deep domain expertise — rea
 
 A domain expert agent is the most powerful pattern in Agent2. It combines: document reading (OCR), domain knowledge (R2R search), context-aware reasoning, human-in-the-loop, and structured output. Think: an experienced professional sitting at a desk with reference books, tools, and the ability to ask questions.
 
+Before building a serious domain expert, study `docs/brain-clone-pattern.md` and
+`agents/procurement-compliance-officer`. The procurement agent is the canonical
+public example for the full Agent2 pattern.
+
 ## When to Activate
 
 - User wants an agent that processes documents against professional standards
@@ -163,6 +167,9 @@ mkdir -p knowledge/books/my-domain/
 # In agent.py:
 knowledge_server = MCPServerStreamableHTTP(os.environ.get("KNOWLEDGE_MCP_URL"))
 agent = create_agent(..., toolsets=[knowledge_server])
+
+# For request-scoped MCP clients, create fresh toolsets in before_run() and
+# return them as _toolsets; Agent2 passes them to Agent.run(toolsets=...).
 
 # Test knowledge search
 docker compose --profile full up -d  # Starts R2R + Knowledge MCP

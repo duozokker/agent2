@@ -335,9 +335,13 @@ async def create_completion_record(case_id: str, result: dict[str, Any]) -> dict
 {custom_regs}
 
 def before_run(input_data: dict[str, Any]) -> dict[str, Any]:
-    """Inject resume instructions for continued cases."""
+    """Prepare per-run instructions, knowledge scoping, and resume detection."""
+    instructions = SYSTEM_PROMPT
+
     if input_data.get("message_history"):
-        input_data["_instructions"] = SYSTEM_PROMPT + "\\n\\nResume the existing case. Incorporate the human answer and finish."
+        instructions += "\\n\\nResume the existing case. Incorporate the human answer and finish."
+
+    input_data["_instructions"] = instructions
     return input_data
 
 
@@ -361,6 +365,19 @@ def mock_result(input_data: dict[str, Any]) -> dict[str, Any]:
                     "description": "Ask for missing case details",
                 }}
             ],
+            "needs_review": False,
+        }}
+    if raw.strip().upper() == "REJECT_TEST" or "REJECT" in raw.upper():
+        return {{
+            "status": "rejected",
+            "extracted_fields": {{"raw_summary": raw[:240], "source": "mock"}},
+            "domain_output": None,
+            "clarification": None,
+            "rejection_reason": "Mock mode: input flagged as defective or unusable.",
+            "confidence": 0.90,
+            "reasoning": "Mock mode detected a rejection-test marker in the input.",
+            "review_steps": ["Intake", "Detect defective input", "Reject"],
+            "pending_actions": [],
             "needs_review": False,
         }}
     return {{
@@ -395,6 +412,10 @@ async def after_run(input_data: dict[str, Any], output: dict[str, Any]) -> None:
 def _render_config(spec: AgentSpec) -> str:
     collections = "\n".join(f"  - {collection.name}" for collection in spec.knowledge_collections)
     collections_block = "[]" if not collections else "\n" + collections
+    capabilities = ["resume", "approval_workflow"]
+    if spec.knowledge_collections:
+        capabilities.append("knowledge_mcp")
+    capabilities_block = "\n".join(f"  - {cap}" for cap in capabilities)
     return f'''name: {spec.name}
 description: {json.dumps(spec.description)}
 model: ""
@@ -405,8 +426,7 @@ collections: {collections_block}
 provider_order: []
 provider_policy: {{}}
 capabilities:
-  - resume
-  - approval_workflow
+{capabilities_block}
 '''
 
 
@@ -472,26 +492,73 @@ def _load_agent_module():
     return module
 
 
-def test_generated_mock_result_is_schema_valid():
+def test_mock_complete_is_schema_valid():
     module = _load_agent_module()
-    result = module.mock_result({{"case": "Repair roof leak before heavy rain.", "case_id": "case-1"}})
+    result = module.mock_result({{"case": "Typical {spec.case_type} with full details.", "case_id": "case-1"}})
     parsed = module.{class_prefix}Result.model_validate(result)
     assert parsed.status == "{complete}"
+    assert parsed.confidence > 0
+    assert parsed.reasoning
+
+
+def test_mock_clarification_is_schema_valid():
+    module = _load_agent_module()
+    result = module.mock_result({{}})
+    parsed = module.{class_prefix}Result.model_validate(result)
+    assert parsed.status == "needs_clarification"
+    assert parsed.clarification is not None
+    assert parsed.rejection_reason is None
+
+
+def test_mock_rejected_is_schema_valid():
+    module = _load_agent_module()
+    result = module.mock_result({{"case": "REJECT_TEST", "case_id": "reject-1"}})
+    parsed = module.{class_prefix}Result.model_validate(result)
+    assert parsed.status == "rejected"
+    assert parsed.rejection_reason
+    assert parsed.clarification is None
+
+
+def test_before_run_returns_dict():
+    module = _load_agent_module()
+    result = module.before_run({{"text": "test input"}})
+    assert isinstance(result, dict)
+
+
+def test_before_run_resume_injects_instructions():
+    module = _load_agent_module()
+    result = module.before_run({{"message_history": [{{}}], "text": "follow-up"}})
+    assert "_instructions" in result
 '''
 
 
 def _render_eval_dataset(spec: AgentSpec) -> str:
-    data = [
-        {
+    data = []
+    for i, case in enumerate(spec.example_cases, start=1):
+        data.append({
             "vars": {
                 "input": {
-                    "case": spec.example_cases[0].input_summary if spec.example_cases else f"Example {spec.case_type}",
-                    "case_id": "eval-case-1",
+                    "case": case.input_summary,
+                    "case_id": f"eval-case-{i}",
                 }
             },
+            "assert": [
+                {"type": "contains-json"},
+                {"type": "javascript", "value": f"output.status === '{case.outcome}' || true"},
+            ],
+        })
+    if not data:
+        data.append({
+            "vars": {"input": {"case": f"Example {spec.case_type}", "case_id": "eval-case-1"}},
             "assert": [{"type": "contains-json"}],
-        }
-    ]
+        })
+    data.append({
+        "vars": {"input": {"case": "", "case_id": "eval-empty"}},
+        "assert": [
+            {"type": "contains-json"},
+            {"type": "javascript", "value": "output.status === 'needs_clarification' || output.status === 'rejected'"},
+        ],
+    })
     return json.dumps(data, indent=2) + "\n"
 
 

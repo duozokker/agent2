@@ -20,6 +20,7 @@ import importlib
 import importlib.util
 import json
 import logging
+import os
 import re
 import sys
 from contextlib import asynccontextmanager
@@ -35,6 +36,7 @@ from shared.approval_workflow import ApprovalWorkflow, ApprovalWorkflowError, Ta
 from shared.auth import require_auth
 from shared.config import Settings, load_agent_config
 from shared.errors import ProblemError, problem_error_handler, validation_error_handler
+from shared.learnings import format_learnings_for_prompt, load_recent_learnings, log_after_run_insights
 from shared.worker import create_task_store
 
 logger = logging.getLogger(__name__)
@@ -207,7 +209,30 @@ async def _call_after_run_hook(
                 getattr(agent_module, "__name__", "unknown"),
                 exc,
             )
+
+    if os.environ.get("AGENT2_DISABLE_LEARNINGS") != "1":
+        agent_name = _extract_agent_name(agent_module)
+        if agent_name:
+            try:
+                log_after_run_insights(agent_name, hook_input, finalized_output)
+            except Exception as exc:
+                logger.debug("Learnings log failed for %s: %s", agent_name, exc)
+
     return finalized_output
+
+
+def _extract_agent_name(agent_module: Any) -> str:
+    """Best-effort extraction of the agent name from a loaded module."""
+    agent_obj = getattr(agent_module, "agent", None)
+    if agent_obj is not None:
+        name = getattr(agent_obj, "name", None)
+        if name:
+            return str(name)
+    mod_name = getattr(agent_module, "__name__", "")
+    parts = mod_name.rsplit(".", 2)
+    if len(parts) >= 2 and parts[-1] == "agent":
+        return parts[-2].replace("_", "-")
+    return ""
 
 
 def _sanitize_agent_module_segment(agent_name: str) -> str:
@@ -573,6 +598,15 @@ async def _load_and_run_agent(
     else:
         input_data.pop("_instructions", None)
         input_data.pop("_toolsets", None)
+
+    if os.environ.get("AGENT2_DISABLE_LEARNINGS") != "1":
+        try:
+            recent_learnings = load_recent_learnings(agent_name, limit=3)
+            learnings_section = format_learnings_for_prompt(recent_learnings)
+            if learnings_section and run_instructions:
+                run_instructions = run_instructions + "\n\n" + learnings_section
+        except Exception as exc:
+            logger.debug("Failed to load learnings for %s: %s", agent_name, exc)
 
     # Runtime control fields should guide the run, not appear in the user prompt.
     input_data.pop("message_history", None)
