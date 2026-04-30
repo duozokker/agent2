@@ -4,7 +4,41 @@ All notable changes to Agent2 will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.3.0] - Unreleased
+## [0.4.0] - 2026-04-30
+
+### Added
+- Operational learnings system (`shared/learnings.py`): auto-logs low-confidence
+  results, clarification patterns, and rejections after each agent run. The 3
+  most recent learnings are injected into the next run's prompt.
+- `/agent-qa` skill for end-to-end testing of deployed agents with schema
+  validation and health reporting.
+- Skill routing rules in `CLAUDE.md` for proactive skill invocation.
+- `scripts/sync-skills.sh` to keep all 5 host directories (.claude, .agents,
+  .codex, .gemini, .github) in sync from a single canonical source.
+- Brain Clone SKILL.md: anti-sycophancy rules, forcing questions with pushback
+  pattern tables, Phase 2.5 (Premise Challenge), Phase 6.5 (Scope Decision),
+  Phase 7.5 (Architecture Review), agent quality rating (8 dimensions, /80),
+  agent slop detection (10 anti-patterns), interview session persistence, and
+  completion status protocol.
+
+### Changed
+- CLI interview prompt now loads dynamically from SKILL.md instead of
+  maintaining a hardcoded copy. SKILL.md is the single source of truth.
+- Phase labels updated from "X/6" to "X/8" including half-phases.
+- `_detect_phase` and `_detect_phase_number` unified into shared keyword table.
+- Generator produces 5 tests (complete, clarification, rejected, before_run,
+  resume) instead of 1, and richer Promptfoo eval datasets from all example cases.
+- Generator `mock_result` now covers all 3 outcomes including rejected.
+- Generator `before_run` always sets `_instructions` for learnings injection.
+- Generator config.yaml adds `knowledge_mcp` capability when collections exist.
+
+### Fixed
+- Learnings read AND write are both gated behind `AGENT2_DISABLE_LEARNINGS`
+  env var to prevent test pollution.
+- Skills synced across all host directories (previously .codex/.gemini/.github
+  were missing `scandal-market-agent-builder`).
+
+## [0.3.0] - 2026-04-30
 
 ### Added
 - First-class `agent2` CLI with setup, onboard, doctor, list, run, serve, and

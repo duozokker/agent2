@@ -372,7 +372,7 @@ def create_app(agent_name: str) -> FastAPI:
     app = FastAPI(
         title=f"Agent2: {agent_name}",
         description=config.description or f"API for the {agent_name} agent",
-        version="0.3.0",
+        version="0.4.0",
         lifespan=_make_lifespan(agent_name),
     )
 

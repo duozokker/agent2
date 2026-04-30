@@ -257,7 +257,7 @@ Skills follow the [open SKILL.md standard](https://agents.md/) and are available
 
 Agent2 provides production-tested primitives for turning domain expertise into AI agents — born from real enterprise work processing millions of documents for German tax firms.
 
-Current release target: **v0.3.0** (pre-release, CLI onboarding in progress)
+Current release: **v0.4.0** (Brain Clone pipeline upgrade, learnings system, single source of truth)
 
 ### What's here
 
