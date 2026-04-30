@@ -200,11 +200,22 @@ else
     info "No terminal detected — skipping API key prompt"
     info "Run 'agent2 setup' after install to configure interactively"
   fi
-  SETUP_ARGS=(--yes)
+  SETUP_ARGS=(--yes --no-onboard)
   if [[ -n "$_OR_KEY" ]]; then SETUP_ARGS+=(--openrouter-key "$_OR_KEY"); fi
   if [[ "$NO_DOCKER" -eq 1 ]]; then SETUP_ARGS+=(--no-docker); fi
-  if [[ "$NO_ONBOARD" -eq 1 ]]; then SETUP_ARGS+=(--no-onboard); fi
   uv run agent2 setup "${SETUP_ARGS[@]}"
+
+  # Ask about Brain Clone if key was provided and TTY is available
+  if [[ "$NO_ONBOARD" -eq 0 && -n "$_OR_KEY" ]] && (exec </dev/tty) 2>/dev/null; then
+    echo ""
+    printf "  ${BOLD}Clone your first expert brain now?${NC} ${DIM}[Y/n]:${NC} " >/dev/tty
+    read -r _ONBOARD_CHOICE </dev/tty 2>/dev/null || _ONBOARD_CHOICE="n"
+    _ONBOARD_CHOICE="${_ONBOARD_CHOICE:-y}"
+    if [[ "$_ONBOARD_CHOICE" =~ ^[Yy] ]]; then
+      echo ""
+      uv run agent2 onboard --overwrite </dev/tty
+    fi
+  fi
 fi
 
 echo ""
