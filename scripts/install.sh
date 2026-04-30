@@ -179,16 +179,19 @@ elif [[ -t 0 ]]; then
 else
   # Piped mode (curl | bash) — collect key via read, then run non-interactive
   _OR_KEY=""
-  if [[ -r /dev/tty ]]; then
+  if (exec </dev/tty) 2>/dev/null; then
     echo ""
-    printf "  ${BOLD}OpenRouter API key${NC} ${DIM}(openrouter.ai/keys, Enter to skip):${NC} "
-    read -r -s _OR_KEY </dev/tty
-    echo ""
+    printf "  ${BOLD}OpenRouter API key${NC} ${DIM}(openrouter.ai/keys, Enter to skip):${NC} " >/dev/tty
+    read -r -s _OR_KEY </dev/tty 2>/dev/null || _OR_KEY=""
+    echo "" >/dev/tty
     if [[ -n "$_OR_KEY" ]]; then
       ok "Key set (${_OR_KEY:0:12}...)"
     else
       info "Skipped — you can add it later with: agent2 setup"
     fi
+  else
+    info "No terminal detected — skipping API key prompt"
+    info "Run 'agent2 setup' after install to configure interactively"
   fi
   SETUP_ARGS=(--yes)
   if [[ -n "$_OR_KEY" ]]; then SETUP_ARGS+=(--openrouter-key "$_OR_KEY"); fi
