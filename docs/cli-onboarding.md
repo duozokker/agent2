@@ -1,6 +1,6 @@
 # Agent2 CLI Onboarding
 
-Agent2 v0.3 introduces a two-stage onboarding flow:
+Agent2 provides a two-stage onboarding flow:
 
 ```bash
 curl -fsSL https://getagent2.dev/install.sh | bash

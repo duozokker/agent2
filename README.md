@@ -8,7 +8,7 @@ Not just how they think — how they work. The tools, the books, the memory, the
 
 ## Quick start
 
-The intended v0.3 flow is:
+The intended flow is:
 
 ```bash
 curl -fsSL https://getagent2.dev/install.sh | bash

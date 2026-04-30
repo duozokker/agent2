@@ -36,3 +36,24 @@ htmlcov/
 # Promptfoo
 .promptfoo/
 .gstack/
+
+# Config backups from agent2 CLI
+*.bak-*
+
+# Playwright MCP session data
+.playwright-mcp/
+
+# Runtime JSONL logs (keep intentional fixtures in tests/)
+*.jsonl
+
+# Branding / marketing docs (local only)
+branding-kit.md
+
+# Development screenshots
+desktop-*.png
+mobile-*.png
+final-*.png
+hub.png
+ripper-*.png
+v[0-9]-*.png
+vibecoding-*.png

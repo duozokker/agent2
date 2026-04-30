@@ -1,6 +1,6 @@
 default_model: ~anthropic/claude-sonnet-latest
 provider_order:
-  - anthropic
+- anthropic
 provider_policy:
   allow_fallbacks: false
 stack_profile: core
