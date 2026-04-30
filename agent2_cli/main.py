@@ -168,8 +168,11 @@ def setup(
 ) -> None:
     """Configure .env, agent2.yaml, and optionally start Docker."""
 
+    import sys
+
+    is_interactive = sys.stdin.isatty() and not yes and not json_output
     launch_onboard = False
-    if tui and not yes and not json_output and textual_available():
+    if tui and is_interactive and textual_available():
         try:
             from agent2_cli.setup_tui import run_setup_tui
 
@@ -178,7 +181,7 @@ def setup(
             launch_onboard = wizard.create_first_agent and not options.no_onboard
         except KeyboardInterrupt:
             raise typer.Exit(130) from None
-    elif not yes and not json_output:
+    elif is_interactive:
         try:
             options, launch_onboard = _setup_wizard(openrouter_key, model, profile, no_docker, no_onboard)
         except KeyboardInterrupt:
