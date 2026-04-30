@@ -15,6 +15,13 @@ NC='\033[0m'
 # ── UI helpers ────────────────────────────────────────────────────────────────
 banner() {
   echo ""
+  echo -e "${BOLD}      _                    _     __  ${NC}"
+  echo -e "${BOLD}     / \\   __ _  ___ _ __ | |_  |_ ) ${NC}"
+  echo -e "${BOLD}    / _ \\ / _\` |/ _ \\ '_ \\| __|  / /  ${NC}"
+  echo -e "${BOLD}   / ___ \\ (_| |  __/ | | | |_  /___| ${NC}"
+  echo -e "${BOLD}  /_/   \\_\\__, |\\___|_| |_|\\__|  ${RED}__${NC}  "
+  echo -e "${BOLD}          |___/                 ${RED}(__)${NC} "
+  echo ""
   echo -e "${RED}${BOLD}  ●  Agent2 Installer${NC}"
   echo -e "${GRAY}  Turn domain experts into production AI agents.${NC}"
   echo -e "${DIM}  https://getagent2.dev${NC}"
