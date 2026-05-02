@@ -335,7 +335,7 @@ def run(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=120) as response:
             console.print_json(response.read().decode())
     except urllib.error.URLError as exc:
         raise typer.BadParameter(f"Could not reach {url}: {exc}") from exc
