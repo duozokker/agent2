@@ -302,16 +302,30 @@ def list_agents() -> None:
     console.print(table)
 
 
+def _read_token_from_env() -> str:
+    """Read the API bearer token from .env file or environment."""
+    env_token = os.environ.get("API_BEARER_TOKEN")
+    if env_token:
+        return env_token
+    env_file = _root() / ".env"
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            if line.startswith("API_BEARER_TOKEN="):
+                return line.split("=", 1)[1].strip()
+    return "dev-token-change-me"
+
+
 @app.command()
 def run(
     agent: Annotated[str, typer.Argument(help="Agent name")],
     text: Annotated[str, typer.Option("--text", help="Input text")] = "hello from agent2 cli",
-    token: Annotated[str, typer.Option("--token", help="Bearer token")] = "dev-token-change-me",
+    token: Annotated[Optional[str], typer.Option("--token", help="Bearer token")] = None,
 ) -> None:
     """Send a sync test request to a local agent."""
 
     _ensure_agent_exists(agent)
     config = load_agent_config(agent)
+    token = token or _read_token_from_env()
     url = f"http://localhost:{config.port}/tasks?mode=sync"
     body = json.dumps({"input": {"text": text}}).encode()
     request = urllib.request.Request(
