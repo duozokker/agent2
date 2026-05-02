@@ -235,9 +235,20 @@ def onboard(
     no_llm: Annotated[bool, typer.Option("--no-llm", help="Use deterministic questionnaire/spec only")] = False,
     no_tui: Annotated[bool, typer.Option("--no-tui", help="Use Rich prompts instead of the Textual form")] = False,
     agentic: Annotated[bool, typer.Option("--agentic", help="Use LLM-powered adaptive interview instead of static form")] = False,
+    demo: Annotated[bool, typer.Option("--demo", help="Simulate a Brain Clone interview for recording demos")] = False,
     overwrite: Annotated[bool, typer.Option("--overwrite", help="Overwrite an existing generated agent")] = False,
 ) -> None:
     """Run the Brain Clone onboarding harness."""
+
+    if demo:
+        from agent2_cli.demo_mode import run_demo_interview
+        try:
+            run_demo_interview(project_root=_root(), overwrite=overwrite, console=console)
+        except (KeyboardInterrupt, GenerationError) as exc:
+            if isinstance(exc, GenerationError):
+                raise typer.BadParameter(str(exc)) from exc
+            raise typer.Exit(130) from None
+        return
 
     use_tui = from_spec is None and not no_tui and textual_available()
     use_agentic = agentic or (from_spec is None and not no_llm and Settings.from_env().has_llm_key and not no_tui)
