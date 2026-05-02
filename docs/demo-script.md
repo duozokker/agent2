@@ -69,14 +69,28 @@ That's rare but it happens."
 A: "Company procurement policy handbook, vendor risk guidelines, and approval
 threshold tables. I also check past purchase history for the vendor."
 
-**After 5-6 questions, type:** "done"
+**Q: "What does your final work product look like?"**
+A: "Always one of three outcomes: approved, needs clarification, or rejected.
+With the reasoning, which policies I checked, and what actions need to happen
+next. Confidence is high when all info is present, lower for new vendors."
+
+**Then type:** "That is everything. Please finalize the agent specification now."
 
 **Voiceover:** "The Brain Clone interview extracts how you think. Not a form —
 a conversation. It adapts based on your answers."
 
-**Show:** The Agent Spec panel appearing with name, role, tools, knowledge, outcomes.
+**Show:** The Agent Spec panel appearing. Highlight these numbers:
 
-**Voiceover:** "From that conversation, Agent2 generates a complete production agent."
+```
+Name: procurement-compliance-officer
+Tools: 10 (lookup_vendor, search_policy, get_purchase_history, ...)
+Knowledge: 3 collections (policy handbook, vendor risk, threshold tables)
+Chain-of-Thought: 7 steps
+Examples: 4 cases (approved, clarification, rejected)
+```
+
+**Voiceover:** "From 8 questions, Agent2 generated 10 domain tools, 3 knowledge
+collections, and a 7-step reasoning chain. Not a prompt — a cloned professional."
 
 ---
 
