@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import secrets
 import shutil
 import subprocess
+
+logger = logging.getLogger(__name__)
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -85,12 +88,27 @@ def run_setup(project_root: Path, options: SetupOptions) -> dict[str, Any]:
 
     docker_started = False
     if not options.no_docker:
+        subprocess.run(
+            ["docker", "compose", "down", "--remove-orphans"],
+            cwd=project_root,
+            capture_output=True,
+        )
         command = ["docker", "compose"]
         if options.stack_profile == "full":
             command += ["--profile", "full"]
         command += ["up", "-d"]
-        subprocess.run(command, cwd=project_root, check=True)
-        docker_started = True
+        result = subprocess.run(command, cwd=project_root, capture_output=True, text=True)
+        if result.returncode != 0:
+            port_error = "port is already allocated" in (result.stderr or "")
+            if port_error:
+                logger.warning(
+                    "Docker port conflict detected. Try restarting Docker Desktop "
+                    "or run: docker compose down && docker compose up -d"
+                )
+            else:
+                logger.warning("Docker compose failed: %s", result.stderr[:300] if result.stderr else "unknown error")
+        else:
+            docker_started = True
 
     return {"changed": True, "dry_run": False, "docker_started": docker_started, **payload}
 
